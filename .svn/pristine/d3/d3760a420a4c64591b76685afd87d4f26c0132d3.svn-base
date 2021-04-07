@@ -1,0 +1,295 @@
+<template>
+  <!-- <div class="mapPosition"> -->
+    <!-- <div class="amap-page-container"> -->
+      <el-amap
+        vid="amapDemo"
+        :zoom="zoom"
+        :center="center">
+        <el-amap-marker
+          v-for="marker in markers"
+          :position="marker.position"
+          :icon="marker.icon"
+          :offset="marker.offset"
+          :events="marker.events">
+          </el-amap-marker>
+            <!-- <el-amap-marker
+              v-for="(marker,index1) in markers"
+              v-if="index1 === 0 || index1 === markers.length-1"
+              :position="marker.position"
+              :icon="marker.icon"
+              :offset="marker.offset"
+              :events="marker.events"></el-amap-marker>
+            <el-amap-marker
+              v-for="(marker,index2) in markers"
+              v-if="index2 > 0 && index2 < markers.length-1"
+              :icon="marker.icon"
+              :offset="marker.offset"
+              :position="marker.position"
+              :events="marker.events"></el-amap-marker> -->
+          <el-amap-polyline
+            :strokeColor='polyline.strColor'
+            :editable="false"
+            :path="polyline.path"
+            :events="polyline.events"></el-amap-polyline>
+          <el-amap-info-window
+            v-for="window in windows"
+            :position="window.position"
+            :visible="window.visible"
+            :content="window.content"></el-amap-info-window>
+      </el-amap>
+    <!-- </div> -->
+  <!-- </div> -->
+</template>
+
+<script>
+const TIMES = 1000
+export default {
+  props: {
+    markLine: {
+      type: Array
+    },
+    markContent: {
+      type: Array
+    }
+  },
+  data () {
+    return {
+      addr: [[102.2714840000, 27.9005810000], [102.2714840000, 27.9005810000], [105.0645880000, 29.5858870000], [106.5584340000, 29.5689960000]],
+      zoom: 5,
+      center: [],
+      markers: [],
+      windows: [],
+      polyline: {
+        strColor: '#3897db',
+        path: []
+      },
+      circles: []
+    }
+  },
+  watch: {
+    markLine () {
+      this.setMapFn()
+    }
+  },
+  mounted () {
+    this.setMapFn()
+  },
+  methods: {
+    transfImg (markLine, markers) {
+      for (var j = 1; j < markLine.length - 1; j++) {
+        markers[j].icon = 'static/img/uncheck1.png'
+      }
+    },
+    toNumber (allLngLat) {
+      var temp = []
+      for (var i = 0; i < allLngLat.length; i++) {
+        temp.push(Number(allLngLat[i]))
+      }
+      return temp
+    },
+    setMapFn () {
+      let markers = []
+      this.polyline.path = []
+      this.windows = []
+      let centernum = Math.floor(this.markLine.length / 2)
+      let _this = this
+      for (let i = 0; i < this.markLine.length; i++) {
+        this.polyline.path.push(this.markLine[i])
+        this.center = this.markLine[centernum]
+        _this.windows.push({
+          position: _this.markLine[i],
+          content: `<div class="prompt">
+                      <img src="static/img/linedefault.jpg" style="width: 80px;height: 70px;" calss="cityImg"/>
+                      <div class="cityInfo">
+                        <div class="cityTitle">${_this.markContent[i].address}</div>
+                        <span class="citySubtitle">${_this.markContent[i].content}</span>
+                      </div>`,
+          visible: false
+        })
+        if (i === 0) {
+          markers[i] = {
+            icon: 'static/img/start1.png',
+            position: _this.markLine[i],
+            offset: [-17.5, -44],
+            events: {
+              click: () => {
+                _this.transfImg(_this.markLine, markers)
+                _this.windows.forEach(window => {
+                  window.visible = false
+                })
+                _this.$nextTick(() => {
+                  _this.windows[0].visible = true
+                })
+              }
+            }
+          }
+        } else if (i === this.markLine.length - 1) {
+          var index = this.markLine.length - 1
+            if (this.markLine.length > 1) {
+            markers[index] = {
+              icon: 'static/img/end1.png',
+              position: _this.markLine[index],
+              offset: [-17.5, -44],
+              events: {
+                click: () => {
+                  _this.transfImg(_this.markLine, markers)
+                  _this.windows.forEach(window => {
+                    window.visible = false
+                  })
+                  _this.$nextTick(() => {
+                    _this.windows[index].visible = true
+                  })
+                }
+              }
+            }
+          }
+        } else {
+          if (this.markLine.length > 2) {
+            markers[i] = {
+              icon: 'static/img/uncheck1.png',
+              position: _this.markLine[i],
+              offset: [-12, -12],
+              events: {
+                click: () => {
+                  _this.transfImg(_this.markLine, markers)
+                  _this.windows.forEach(window => {
+                    window.visible = false
+                    markers[i].icon = 'static/img/check.png'
+                  })
+                  _this.$nextTick(() => {
+                    _this.windows[i].visible = true
+                  })
+                }
+              }
+            }
+          }
+        }
+        this.markers = markers
+      }
+      // if (this.singlePlan.length) console.log(this.singlePlan)
+      // let markers = []
+      // let windows = []
+      // let circles = []
+      // // let num = 7
+      // let centernum = Math.floor(this.addr.length / 2)
+      // let _this = this
+      // for (let i = 0; i < this.addr.length; i++) {
+      //   this.polyline.path.push(this.addr[i])
+      //   this.center = this.addr[centernum]
+      //   if (i === 0) {
+      //     markers[i] = {
+      //       icon: 'static/img/start1.png',
+      //       position: _this.addr[i],
+      //       offset: [-25, -65],
+      //       events: {
+      //         click: () => {
+      //           for (let j = 1; j < _this.addr.length - 1; j++) {
+      //             markers[j].icon = 'static/img/uncheck1.png'
+      //           }
+      //           _this.windows.forEach(window => {
+      //             window.visible = false
+      //           })
+      //           _this.$nextTick(() => {
+      //             _this.windows[i].visible = true
+      //           })
+      //         }
+      //       }
+      //     }
+      //   } else if (i === this.addr.length - 1) {
+      //     markers[i] = {
+      //       icon: 'static/img/end1.png',
+      //       position: _this.addr[i],
+      //       offset: [-25, -65],
+      //       events: {
+      //         click: () => {
+      //           for (let j = 1; j < _this.addr.length - 1; j++) {
+      //             markers[j].icon = 'static/img/uncheck1.png'
+      //           }
+      //           _this.windows.forEach(window => {
+      //             window.visible = false
+      //           })
+      //           _this.$nextTick(() => {
+      //             _this.windows[i].visible = true
+      //           })
+      //         }
+      //       }
+      //     }
+      //   } else {
+      //     markers[i] = {
+      //       icon: 'static/img/uncheck1.png',
+      //       position: _this.addr[i],
+      //       offset: [-15, -15],
+      //       // center: [103.8691 + i * 0.002, 30.68215 + i * 0.001],
+      //       // radius: 20,
+      //       // fillOpacity: 1,
+      //       // fillColor: 'rgba(0,0,255,1)',
+      //       events: {
+      //         click: () => {
+      //           _this.windows.forEach(window => {
+      //             window.visible = false
+      //             for (let j = 1; j < _this.addr.length - 1; j++) {
+      //               markers[j].icon = 'static/img/uncheck1.png'
+      //             }
+      //             markers[i].icon = 'static/img/check1.png'
+      //           })
+      //           _this.$nextTick(() => {
+      //             _this.windows[i].visible = true
+      //           })
+      //         }
+      //       }
+      //     }
+      //   }
+      //   windows.push({
+      //     position: this.addr[i],
+      //     content: `<div class="prompt">
+      //                 <img src="static/img/1.jpg" style="width: 80px;height: 70px;" calss="cityImg"/>
+      //                 <div class="cityInfo">
+      //                   <div class="cityTitle">${i}</div>
+      //                   <span class="citySubtitle">弦子舞、泡温泉、茶马古道</span>
+      //                 </div>
+      //                 <a href='https://www.baidu.com' class="cityDetail">详情&gt;</a>`,
+      //     visible: false
+      //   })
+      // }
+    }
+  }
+}
+</script>
+
+<style lang="less">
+  @import "../style/main.less";
+  .amap-info-content {
+    overflow: hidden;
+    /*background-color: #fff;*/
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+  }
+  /*.amap-info-close {
+    display: none;
+  }*/
+  .prompt {
+    display: flex;
+    .px2rem(width, 180);
+    .px2rem(margin-top, 5);
+    /*.px2rem(margin-bottom, 5);*/
+  }
+  .prompt img {
+    flex: 0 0 80px;
+  }
+  .prompt .cityInfo {
+    flex: 1;
+    .px2rem(margin-left, 10);
+    text-align: left;
+  }
+  .prompt .cityTitle {
+    /*width: 70px;*/
+    height: 25px;
+    line-height: 25px;
+    .px2rem(margin-bottom, 5);
+    font-size: 1.1rem;
+  }
+  .prompt .citySubtitle {
+    font-size: 0.8rem;
+    color: #feaa16;
+  }
+</style>

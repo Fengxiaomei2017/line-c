@@ -1,0 +1,381 @@
+<template>
+  <div>
+    <header class="mint-header is-fixed">
+      <div class="mint-header-button is-left">
+        <div class="">
+          <button class="mint-button mint-button--default mint-button--normal" @click="goBack">
+            <span class="mint-button-icon"><i class="mintui mintui-back"></i></span>
+            <label class="mint-button-text"></label>
+          </button>
+        </div>
+      </div>
+      <h1 class="mint-header-title">我的订单</h1>
+      <div class="mint-header-button is-right">
+        <!--<a data-v-c1010688="" href="#/my-orders" class=""><i data-v-c1010688="" class="iconfont icon-dingdan"></i></a>-->
+      </div>
+    </header>
+    <Tab :tab-list="tabList" :selected="selected" v-on:selectedTab="setFilter"></Tab>
+
+    <div class="content" v-infinite-scroll="getMoreBypage" infinite-scroll-disabled="loading"
+         infinite-scroll-distance="10">
+      <div class="content-cell" v-for="order in orderList">
+        <div class="row cell-title">
+          <div class="col-6 sellerName">{{order.sellerName}}</div>
+          <div class="col-6 text-right yellow">{{orderStateCfg[order.orderState].name}}</div>
+        </div>
+        <!--<div class="cell-title">-->
+        <!--<span class="font-dark">{{order.sellerName}}</span>-->
+        <!--<span class="text-right yellow">{{orderStateCfg[order.orderState].name}}</span>-->
+        <!--</div>-->
+        <router-link :to="{name:'OrderDetails',query:{id:order.orderNo}}" class="cell-body">
+          <div class="w-40">
+            <div class="hotelImg" :style="{backgroundImage: 'url('+order.orderDetailInfoVo.image+')'}"></div>
+          </div>
+          <div class="w-60">
+            <div class="font-16">{{order.orderDetailInfoVo.productSubTitle}}</div>
+            <div class="">
+              出行时间：{{order.tripTime}}
+            </div>
+            <div class="">
+              {{order.orderDetailInfoVo.adultNumber}}成人 {{order.orderDetailInfoVo.childNumber}}儿童
+            </div>
+            <div class="price">
+              <span>订单金额:</span>
+              <span class="font-16 yellow">￥</span>
+              <b class="price-num">{{order.orderMoney}}</b>
+            </div>
+          </div>
+        </router-link>
+        <div class="text-right">
+          <button class="btn btn-sm mr-2 btn-default" v-for="btn in orderStateCfg[order.orderState].options"
+                  :class="btn.btnStyle"
+                  @click="btn.fun(order.orderNo,order.orderMoney)">{{btn.btn}}
+          </button>
+        </div>
+      </div>
+      <div class="content-cell" :class="orderList.length==0?'':'d-none'">没有{{selectedName}}订单</div>
+    </div>
+    <!--<div class="fixed-bottom">-->
+    <!--<div class="row">-->
+    <!--<div class="col-8 bg-white total">合计:100</div>-->
+    <!--<div class="col-4 next-step">下一步-->
+    <!--</div>-->
+
+    <!--</div>-->
+
+    <mt-popup
+      v-model="popupVisiblePayWays"
+      position="bottom" class="popup-pay">
+      <PayCom :orderNo="orderNo" :orderMoney="orderMoney" v-on:watchClose="_closeOrder"></PayCom>
+    </mt-popup>
+  </div>
+
+
+</template>
+
+<script>
+  import Tab from '@/components/tab';
+  import PayCom from '@/components/pay'
+  import {Popup} from 'mint-ui';
+  import {InfiniteScroll} from 'mint-ui';
+
+  import Vue from 'vue'
+  import {getOrderList, cancelOrder} from '@/api/getData';
+
+  Vue.component(Tab.name, Tab);
+  Vue.component(PayCom.name, PayCom);
+  Vue.component(Popup.name, Popup);
+
+  export default {
+    name: 'ChooseDate',
+    data() {
+      return {
+        popupVisiblePayWays: false,
+        selected: 'state-0',
+        selectedName: '',
+        orderNo: '',
+        orderMoney: '',
+        pageNum: 1,
+        pageSize: 5,
+        total: 0,
+        loading: false,
+        tabList: [{
+          tabID: 'state-0',
+          tabText: '全部'
+        }, {
+          tabID: 'state-1',
+          tabText: '待支付',
+        }, {
+          tabID: 'state-2',
+          tabText: '待消费',
+
+        }, {
+          tabID: 'state-3',
+          tabText: '已完成'
+        }, {
+          tabID: 'state-4',
+          tabText: '退款'
+        }
+        ],
+        orderStateCfg: {
+          1: {
+            name: "待支付",
+            state: 1,
+            options: [{btn: '取消订单', fun: this.cancel, btnStyle: ''}, {
+              btn: '去支付',
+              fun: this.payOrder,
+              btnStyle: 'btn-yellow'
+            }]
+          },
+          2: {
+            name: "待确认",
+            state: 2,
+            options: [{btn: '取消订单', fun: this.cancel}, {btn: '催Ta', fun: this.cancel, btnStyle: 'btn-yellow'}]
+          },
+          3: {
+            name: "待消费",
+            state: 3,
+            options: [{btn: '申请退款', fun: this.cancel}]
+          },
+          4: {
+            name: "待评价",
+            state: 4,
+            options: [{btn: '联系客服', fun: this.cancel}, {btn: '再次购买', fun: this.cancel}, {
+              btn: '去评价',
+              fun: this.cancel,
+              btnStyle: 'btn-yellow'
+            }]
+          },
+          5: {
+            name: "已完成",
+            state: 5,
+            options: [{btn: '联系客服', fun: this.cancel}, {btn: '再次购买', fun: this.cancel}]
+          },
+          6: {
+            name: "退款申请",
+            state: 6,
+            options: [{btn: '联系客服', fun: this.cancel}, {btn: '再次购买', fun: this.cancel}]
+          },
+          7: {
+            name: "退款中",
+            state: 7,
+            options: [{btn: '联系客服', fun: this.cancel}, {btn: '再次购买', fun: this.cancel}]
+          },
+          8: {
+            name: "退款成功",
+            state: 8,
+            options: [{btn: '联系客服', fun: this.cancel}, {btn: '再次购买', fun: this.cancel}]
+          },
+          9: {
+            name: "已取消（商家）",
+            state: 11,
+          },
+          10: {
+            name: "已取消（用户）",
+            state: 11,
+          },
+          11: {
+            name: "已取消（系统）",
+            state: 11,
+          }
+        },
+        orderList: [
+          // {
+          //   "orderDetailInfoVo": {
+          //     "skuName": "还是一个很好的产品",
+          //     "productSubTitle": "游乐园",
+          //     "productName": "温江国色天香",
+          //     "adultNumber": 1,
+          //     "childNumber": 0,
+          //     "status": 0
+          //   },
+          //   "id": "c36ad25e-40d1-4878-8d15-d17ed6046e80",
+          //   "orderNo": "20180330468350003",
+          //   "sellerName": "成都中山俱乐部温江店",
+          //   "orderMoney": 180.00,
+          //   "actualMoney": 180.00,
+          //   "payState": 1,
+          //   "payMode": 0,
+          //   "orderState": 1,
+          //   "orderTime": "2018-03-30 16:26:47",
+          //   "tripTime": "2018-04-02",
+          //   "contactPerson": "cxy",
+          //   "contactPhone": "13882149136"
+          // }, {
+          //   "orderDetailInfoVo": {
+          //     "skuName": "还是一个很好的产品",
+          //     "productSubTitle": "游乐园",
+          //     "productName": "温江国色天香",
+          //     "adultNumber": 1,
+          //     "childNumber": 1,
+          //     "status": 0
+          //   },
+          //   "id": "c27af74d-b904-4d5e-8936-7259d8b8286a",
+          //   "orderNo": "20180330579850000",
+          //   "sellerName": "成都中山俱乐部温江店",
+          //   "orderMoney": 300.00,
+          //   "actualMoney": 300.00,
+          //   "payState": 1,
+          //   "payMode": 0,
+          //   "orderState": 1,
+          //   "orderTime": "2018-03-30 16:24:58",
+          //   "tripTime": "2018-04-01",
+          //   "contactPerson": "22222",
+          //   "contactPhone": "123"
+          // }
+
+        ],
+      }
+    },
+    methods: {
+      goBack () {
+        this.$router.push('/list')
+      },
+      getMoreBypage() {
+        if (this.total !== 0 && this.orderList.length < this.total) {
+          this.loading = true;
+          this.pageNum = this.pageNum + 1;
+          this.getData(true);
+        }
+      },
+      setFilter(flilter, tabText) {
+        this.selected = flilter
+        this.selectedName = flilter === 'state-0' ? '' : tabText
+        this.getData()
+      },
+      closePopup() {
+        this.popupVisiblePayWays = false;
+      },
+      payOrder(orderNo, orderMoney) {
+        this.orderNo = orderNo;
+        this.orderMoney = orderMoney + '';
+        this.popupVisiblePayWays = true;
+        console.log('去支付')
+      },
+      _closeOrder () {
+        this.popupVisiblePayWays = false
+      },
+      cancel(orderNo) {
+        //userId,orderNo
+        cancelOrder(this.$store.state.lineUser.id, orderNo).then(res => {
+          this.MessageBox('提示', res.data.message);
+          if (res && res.data.state === 1) {
+            this.pageNum = 1;
+            this.getData(false);
+          }
+        })
+      },
+      getData(isPush) {
+        //userId, orderState,pageNumber,pageSize
+        let userId = this.$store.state.lineUser.id
+        let orderState = this.selected.split('-')[1]
+        if (userId) {
+          getOrderList(userId, orderState, this.pageNum, this.pageSize).then(res => {
+            // debugger;
+            if (res && res.data.state === 1 && res.data.data.list) {
+              // this.roadList = res.data.data.list;
+              let orderList = res.data.data.list
+              if (!isPush) {
+                this.total = res.data.data.total
+              }
+              this.orderList = isPush ? this.orderList.concat(orderList) : orderList
+              this.loading = false
+            }
+          })
+        }
+      }
+    },
+    created() {
+      this.getData(false)
+    }
+
+  }
+</script>
+
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+
+  .popup-pay {
+    width: 100%;
+    /*.px2rem(height, 120);
+    .px2rem(line-height, 60);
+    font-size: @font-18;
+    text-align: center; */
+  }
+
+  .content {
+    /*margin-top: 0.3125rem;*/
+    .px2rem(margin-top, 40);
+
+    .content-cell {
+      padding-top: 0;
+      &:first-child {
+        margin-top: 0;
+      }
+      .cell-title {
+        font-size: @font-16;
+      }
+      .cell-body {
+        color: @font-dark;
+        .w-40 {
+          display: inline-block;
+          /*padding: 13px;*/
+          .px2rem(width, 130);
+          .px2rem(padding-left, 10);
+          height: 5rem;
+        }
+        .w-60 {
+          display: inline-block;
+          .px2rem(padding, 10);
+          height: 5rem;
+
+        }
+      }
+      .price {
+        /*position: absolute;*/
+        /*right: 1rem;*/
+        /*bottom: 0rem;*/
+        font-size: @font-16;
+        .price-num {
+          .px2rem(font-size, 18);
+          color: @yellow;
+        }
+      }
+
+      .hotelImg {
+        background-image: url(../assets/timg.jpg);
+        height: 5rem;
+        /* background-origin: border-box; */
+        /* background-clip: content-box; */
+        background-size: cover;
+        /*background-repeat: no-repeat*/
+      }
+      .sellerName {
+        color: @font-dark;
+      }
+
+      .row + .row {
+        margin-top: 0.5rem;
+      }
+
+      .btn-default {
+        background: @white;
+        border-color: @font-gray;
+        color: @font-dark;
+      }
+      .btn-yellow {
+        background: @yellow;
+        border-color: @yellow;
+        color: @white;
+      }
+
+    }
+
+  }
+
+  .total {
+    line-height: 3rem;
+    text-align: center;
+  }
+</style>

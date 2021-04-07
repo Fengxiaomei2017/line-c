@@ -1,0 +1,56 @@
+const SET_USER = 'SET_USER'
+const SET_TOKEN = 'SET_TOKEN'
+const SET_CODE = 'SET_CODE'
+const LOGIN_OUT = 'LOGIN_OUT'
+const SET_FILTER_KEY = 'SET_FILTER_KEY'
+
+const HOTEL_ID = 'HOTEL_ID'
+const GOODS_ID = 'GOODS_ID'
+
+
+import {setStore, removeStore} from '@/config/mUtils'
+
+export default {
+  // 设置当前登录用户
+  [SET_USER] (state, lineUser) {
+    state.lineUser = {...lineUser}
+    setStore('lineUser', lineUser)
+  },
+  // 设置token
+  [SET_TOKEN] (state, token) {
+    state.token = token
+    setStore('token', token)
+  },
+  // 设置code
+  [SET_CODE] (state, code) {
+    state.code = code
+    setStore('code', code)
+  },
+
+
+  // hotelId
+  [HOTEL_ID] (state, hotelId) {
+    state.hotelId = hotelId
+  },
+  // goodsId
+  [GOODS_ID] (state, goodsId) {
+    state.goodsId = goodsId
+  },
+
+  // 退出登录
+  [LOGIN_OUT] (state) {
+    state.token = ''
+    state.lineUser = {}
+    state.code = ''
+    state.hotelId = ''
+    state.goodsId = ''
+    state.minStock = ''
+    removeStore('token')
+    removeStore('lineUser')
+    removeStore('code')
+  },
+  // 筛选字段
+  [SET_FILTER_KEY] (state, filterKey) {
+    Object.assign(state.filterKey, filterKey)
+  }
+}

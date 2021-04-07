@@ -1,0 +1,226 @@
+<template>
+  <!-- <div class="mapPosition"> -->
+    <!-- <div class="amap-page-container"> -->
+      <el-amap
+        vid="amapDemo"
+        :zoom="zoom"
+        :center="center">
+          <el-amap-marker
+            v-for="(marker,index1) in markers"
+            v-if="index1 === 0 || index1 === markers.length-1"
+            :position="marker.position"
+            :icon="marker.icon"
+            :offset="marker.offset"
+            :events="marker.events"></el-amap-marker>
+          <el-amap-marker
+            v-for="(marker,index2) in markers"
+            v-if="index2 > 0 && index2 < markers.length-1"
+            :icon="marker.icon"
+            :offset="marker.offset"
+            :position="marker.position"
+            :events="marker.events"></el-amap-marker>
+          <!-- <el-amap-marker
+            v-for="circle in circles"
+            :position="circle.position"
+            icon="static/img/1.jpg"
+            :events="circle.events"></el-amap-marker> -->
+          <el-amap-polyline
+            :strokeColor='polyline.strColor'
+            :editable="false"
+            :path="polyline.path"
+            :events="polyline.events"></el-amap-polyline>
+          <!-- <el-amap-circle
+            v-for="circle in circles"
+            :center="circle.center"
+            :radius="circle.radius"
+            :fillColor="circle.fillColor"
+            :fillOpacity='circle.fillOpacity'
+            :strokeColor='polyline.strColor'
+            :events="circle.events"
+            :zIndex='51'></el-amap-circle> -->
+          <el-amap-info-window
+            v-for="window in windows"
+            :position="window.position"
+            :visible="window.visible"
+            :content="window.content"></el-amap-info-window>
+      </el-amap>
+    <!-- </div> -->
+  <!-- </div> -->
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      addr: [[102.2714840000, 27.9005810000], [103.7725380000, 29.5579410000], [105.0645880000, 29.5858870000], [106.5584340000, 29.5689960000]],
+      zoom: 16,
+      center: [],
+      markers: [],
+      windows: [],
+      polyline: {
+        strColor: '#3897db',
+        path: []
+      },
+      circles: []
+    }
+  },
+  mounted () {
+    let markers = []
+    let windows = []
+    let circles = []
+    // let num = 7
+    let centernum = Math.floor(this.addr.length / 2)
+    let _this = this
+    for (let i = 0; i < this.addr.length; i++) {
+      this.polyline.path.push(this.addr[i])
+      // this.polyline.path.push([103.8691 + i * 0.002, 30.68215 + i * 0.001])
+      // this.center = [103.8691 + centernum * 0.001, 30.68215]
+      this.center = this.addr[centernum]
+      if (i === 0) {
+        markers[i] = {
+          icon: 'static/img/start1.png',
+          position: _this.addr[i],
+          // position: [103.8691 + i * 0.002, 30.68215 + i * 0.001],
+          offset: [-25, -65],
+          events: {
+            click: () => {
+              for (let j = 1; j < _this.addr.length - 1; j++) {
+                markers[j].icon = 'static/img/uncheck1.png'
+              }
+              _this.windows.forEach(window => {
+                window.visible = false
+              })
+              _this.$nextTick(() => {
+                _this.windows[i].visible = true
+              })
+            }
+          }
+        }
+      } else if (i === this.addr.length - 1) {
+        markers[i] = {
+          icon: 'static/img/end1.png',
+          position: _this.addr[i],
+          offset: [-25, -65],
+          events: {
+            click: () => {
+              for (let j = 1; j < _this.addr.length - 1; j++) {
+                markers[j].icon = 'static/img/uncheck1.png'
+              }
+              _this.windows.forEach(window => {
+                window.visible = false
+              })
+              _this.$nextTick(() => {
+                _this.windows[i].visible = true
+              })
+            }
+          }
+        }
+      } else {
+        markers[i] = {
+          icon: 'static/img/uncheck1.png',
+          position: _this.addr[i],
+          offset: [-15, -15],
+          // center: [103.8691 + i * 0.002, 30.68215 + i * 0.001],
+          // radius: 20,
+          // fillOpacity: 1,
+          // fillColor: 'rgba(0,0,255,1)',
+          events: {
+            click: () => {
+              _this.windows.forEach(window => {
+                window.visible = false
+                for (let j = 1; j < _this.addr.length - 1; j++) {
+                  markers[j].icon = 'static/img/uncheck1.png'
+                }
+                markers[i].icon = 'static/img/check1.png'
+              })
+              _this.$nextTick(() => {
+                _this.windows[i].visible = true
+              })
+            }
+          }
+        }
+        // markers.push({
+        //   icon: 'static/img/1.jpg',
+        //   center: [103.8691 + i * 0.002, 30.68215 + i * 0.001],
+        //   // radius: 20,
+        //   // fillOpacity: 1,
+        //   // fillColor: 'rgba(0,0,255,1)',
+        //   events: {
+        //     click: () => {
+        //       _this.windows.forEach(window => {
+        //         window.visible = false
+        //         // if (i > 1 && i < num - 2) {
+        //         //   _this.circles[i - 2].fillColor = '#fff'
+        //         //   _this.circles[i].fillColor = '#fff'
+        //         // }
+        //         // _this.circles[i - 1].fillColor = '#0066ff'
+        //       })
+        //       _this.$nextTick(() => {
+        //         _this.windows[i].visible = true
+        //       })
+        //     }
+        //   }
+        // })
+      }
+      windows.push({
+        position: this.addr[i],
+        content: `<div class="prompt">
+                    <img src="static/img/1.jpg" style="width: 80px;height: 70px;" calss="cityImg"/>
+                    <div class="cityInfo">
+                      <div class="cityTitle">${i}</div>
+                      <span class="citySubtitle">弦子舞、泡温泉、茶马古道</span>
+                    </div>
+                    <a href='https://www.baidu.com' class="cityDetail">详情&gt;</a>`,
+        visible: false
+      })
+    }
+    this.markers = markers
+    this.windows = windows
+    this.circles = circles
+  }
+}
+</script>
+
+<style>
+  .mapPosition .amap-page-container {
+    width: 100%;
+    height: 100%;
+    /*margin: 10px 0;*/
+  }
+  .mapPosition .amap-page-container .amap-info-content {
+    overflow: hidden;
+    background-color: #fff;
+    /*background-color: rgba(74, 73, 72, 0.8);*/
+    border-radius: 4px;
+  }
+  .amap-info-close {
+    display: none;
+  }
+/*  .mapPosition .amap-page-container .prompt {
+    position: relative;
+    text-align: center;
+  }
+  .mapPosition .amap-page-container .prompt .cityInfo {
+    float: right;
+    width: 120px;
+    margin-left: 8px;
+    text-align: left;
+  }
+  .mapPosition .amap-page-container .prompt .cityTitle {
+    width: 70px;
+    height: 25px;
+    line-height: 25px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+  }
+  .mapPosition .amap-page-container .prompt .citySubtitle, .mapPosition .amap-page-container .prompt .cityDetail{
+    font-size: 0.9rem;
+  }
+  .mapPosition .amap-page-container .prompt .cityDetail {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 45px;
+    text-decoration: underline;
+  }*/
+</style>

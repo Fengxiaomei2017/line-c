@@ -1,0 +1,131 @@
+<template>
+  <transition name="slide">
+    <!-- <transition name="slide">
+      <img
+        v-show="startPage"
+        class="start-page"
+        @load="toHome"
+        @click="clicktoHome"
+        :src="imgUrl">
+    </transition> -->
+    <div>
+      <header class="mint-header is-fixed">
+        <div class="mint-header-button is-left" @click="loginOut">
+          {{loginMsg}}</div>首页
+        <div class="mint-header-button is-right">
+          <a data-v-c1010688="" href="#/my-orders" class="my-icon"></a>
+        </div>
+      </header>
+      <!-- header class="mint-header is-fixed">
+        <a class="mint-header-button is-left" @click="goBack">
+          <i class="mintui mintui-back"></i>
+        </a>
+        <span class="product-name">{{product.productName}}</span>
+      </header> -->
+      <div class="content">
+        <a fixed class="card img-fluid card518" href="#/home">
+          <img class="card-img-top" src="../assets/zhuanti.jpg">
+          <!-- <div class="card-img-overlay text-center">
+            <h2>5.18专题</h2>
+          </div> -->
+        </a>
+
+        <div class="hotel-line">
+          <a class="card img-fluid line" id="" href="#/hotel">
+            <img class="card-img-top" src="../assets/hotel.jpg">
+            <!-- <div class="card-img-overlay text-center">
+              <h4>酒店</h4>
+            </div> -->
+          </a>
+          <a class="card img-fluid line" href="#/newList">
+            <img class="card-img-top" src="../assets/line.jpg">
+            <!-- <div class="card-img-overlay text-center">
+              <h4>线路</h4>
+            </div> -->
+          </a>
+        </div>
+      </div>
+    </div>
+  </transition>
+</template>
+
+<script>
+import {mapMutations} from 'vuex'
+import Vue from 'vue'
+import {MessageBox} from 'mint-ui'
+//  Vue.component(Header.name, Header);
+export default {
+  name: 'Home',
+  data () {
+    return {
+      user: '',
+      loginMsg: ''
+    }
+  },
+  created () {
+    this.user = this.$store.state.lineUser.id
+    // this.checkImg()
+    if (this.user) {
+      this.loginMsg = '退出登陆'
+    } else {
+      this.loginMsg = ''
+    }
+  },
+  methods: {
+    ...mapMutations([
+      'LOGIN_OUT'
+    ]),
+    loginOut () {
+      this.LOGIN_OUT()
+      MessageBox('提示', '成功退出')
+      this.loginMsg = ''
+    }
+  }
+}
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+  .start-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    width: 100vw;
+    height: 100vh;
+  }
+  .content {
+    background-color: #fff !important;
+    h4, h2 {
+      color: @white;
+    }
+    .card518 {
+      .px2rem(margin, 10);
+      overflow: hidden;
+      img {
+        .px2rem(height, 200);
+        object-fit: cover;
+      }
+    }
+
+    .hotel-line {
+      .px2rem(margin, 10);
+      .line {
+        .px2rem(margin-bottom, 10);
+        img {
+          object-fit: cover;
+          .px2rem(height, 200);
+        }
+      }
+    }
+  }
+  /*.content {*/
+  /*margin-top: 2.5rem;*/
+  /*}*/
+  .slide-enter-active {
+    transition: all 1s cubic-bezier(1.0,0.5,0.8,1.0);
+    /*transition: all 2s cubic-bezier(.94,-0.25,.32,1.31);*/
+    opacity: 0;
+  }
+</style>

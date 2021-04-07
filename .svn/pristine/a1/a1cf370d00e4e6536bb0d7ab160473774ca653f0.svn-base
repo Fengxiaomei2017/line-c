@@ -1,0 +1,484 @@
+<template>
+<!-- <transition name="slide"> -->
+  <div>
+    <header class="mint-header is-fixed">
+      <a class="mint-header-button is-left" @click="goBack">
+        <i class="mintui mintui-back"></i>
+      </a>
+      <span class="mint-header">线路列表</span>
+      <div class="mint-header-button is-right">
+        <a data-v-c1010688="" href="#/my-orders" class="my-icon"></a>
+      </div>
+    </header>
+    <Tab :tab-list="tablist" :selected="selected" :dropdown="true" v-on:selectedTab="showFilter"></Tab>
+    <TabContainer :class="{'d-none':!isShowFilter}">
+      <TabContainerItem id="theme" v-show="selected==='theme'">
+        <div class="filter">
+          <button type="button"
+                  @click="refreshList('themeList','all')"
+                  class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedTheme==='all'}">全部
+          </button>
+          <button type="button"
+                  v-for="(item,themIndex) in themeList" @click="refreshList('themeList',item.cellKey)"
+                  class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedTheme===themeList[themIndex].name}">
+                  {{item.name}}
+          </button>
+        </div>
+
+      </TabContainerItem>
+      <TabContainerItem id="days" v-show="selected==='days'">
+        <div class="filter">
+          <button type="button"
+                  @click="refreshList('daysList','all')"
+                  class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedDays==='all'}">全部
+          </button>
+          <button type="button"
+                  v-for="item in daysList"@click="refreshList('daysList',item.cellKey)"
+                  class="btn btn-sm" :class="{'btn-yellow':cellSelectedDays===item.cellKey}">
+                  {{item.name}}
+          </button>
+        </div>
+      </TabContainerItem>
+
+      <TabContainerItem id="way" v-show="selected==='way'">
+        <div class="filter">
+          <button type="button"
+                  @click="refreshList('wayList','all')"
+                  class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedWay==='all'}">全部
+          </button>
+          <button type="button"
+                  v-for="item in wayList" @click="refreshList('wayList',item.cellKey)"
+                  class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedWay===item.cellKey}">
+                  {{item.name}}
+          </button>
+        </div>
+      </TabContainerItem>
+      <TabContainerItem id="sort" v-show="selected==='sort'">
+        <div class="filter">
+          <button type="button"
+                  v-for="item in sortList" @click="refreshList('sortList',item.cellKey)"
+                  class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedSort===item.cellKey}">
+                  {{item.name}}
+          </button>
+        </div>
+      </TabContainerItem>
+    </TabContainer>
+  <div
+    class="content"
+    v-infinite-scroll="getMoreBypage"
+    infinite-scroll-disabled="loading"
+    infinite-scroll-distance="10">
+      <router-link
+        class="card img-fluid singleDayJs"
+        v-for="road in roadList"
+        :key="road.id"
+        :to="{name:'Details',params:{id:road.id}}">
+        <img class="card-img-top" v-lazy="road.pic">
+        <div class="card-title font-18">
+          <i class="iconfont icon-shuqianbookmark11"></i>
+          <div class="white font-16 day-num">{{road.days}}天</div>
+        </div>
+        <div class="card-img-overlay">
+          <div class="black-overlay">
+            <p class="card-text">{{road.describe}}</p>
+            <div class="startingPoint small strong">[{{road.startingPoint}}出发]</div>
+            <div class="price yellow"><span>￥</span>
+              <b class="price-num">{{road.price}}</b><span> 起</span>
+            </div>
+          </div>
+        </div>
+      </router-link>
+  </div>
+    <div class="black-over" :class="{'d-none':!isShowFilter}" @click="hidFilter"></div>
+  </div>
+<!-- </transition> -->
+</template>
+
+<script>
+// import {setStore, getStore} from '@/config/mUtils'
+import Tab from '@/components/tab'
+import {getRoadList, getRoadListAndParam} from '@/api/getData.js'
+// import Vue from 'vue'
+import { TabContainer, TabContainerItem, InfiniteScroll} from 'mint-ui'
+import {mapMutations} from 'vuex'
+// Vue.component(Tab.name, Tab)
+export default {
+  name: 'List',
+  components: {
+    Tab,
+    TabContainer,
+    TabContainerItem,
+    InfiniteScroll
+  },
+  data () {
+    return {
+      selected: '',
+      // loading: false,
+      cellSelectedTheme: 'all',//选中过滤子项
+      cellSelectedDays: 'all',//选中过滤子项
+      cellSelectedWay: 'all',//选中过滤子项
+      cellSelectedSort: 'all',//选中过滤子项
+      isShowFilter: false,
+      pageNum: 1,
+      pageSize: 10,
+      total: 0,
+      sentDays: '',
+      sentType: '',
+      sentTheme: '',
+      orderBy: '',//根据什么过滤
+      orderDesc: '',
+      tablist: [{
+        tabID: 'theme',
+        tabText: '线路主题'
+      }, {
+        tabID: 'days',
+        tabText: '游玩天数'
+      }, {
+        tabID: 'way',
+        tabText: '出行方式'
+      }, {
+        tabID: 'sort',
+        tabText: '排序'
+      }],
+      themeList: [],
+      daysList: [],
+      wayList: [],
+      sortList: [{
+        name: '综合排序', cellKey: 'all'
+      }, {
+        name: '受欢迎程度', cellKey: 'views-desc'
+      }, {
+        name: '价格最高', cellKey: 'price-desc'
+      }, {
+        name: '价格最低', cellKey: 'price-asc'
+      },
+      {
+        name: '评分最高', cellKey: 'comments-desc'
+      }],
+      roadList: [],
+      storageNum: 1,
+      listScrollTop: ''
+    }
+  },
+  created () {
+    //pageNum, pageSize,days,type,theme,orderBy,orderDesc
+    this.listScrollTop = this.$store.state.listScrollTop
+    this.getRoadListData()
+    // this.getData(false, this.sentDays, this.sentType, this.sentTheme)
+  },
+  mounted () {
+    this.$nextTick(() => {
+      if (this.listScrollTop) {
+        window.scrollTo(0, this.listScrollTop)
+      }
+      document.addEventListener('touchstart', this.handleScroll)
+    })
+  },
+  destroyed () {
+    document.removeEventListener('touchstart', this.handleScroll)
+  },
+  methods: {
+    ...mapMutations([
+      'LIST_SCROLL_TOP'
+    ]),
+    goBack () {
+      this.$router.push('/home')
+    },
+    handleScroll () {
+      let scrollT = document.querySelector('.content').scrollTop
+      this.LIST_SCROLL_TOP(scrollT)
+    },
+    // handleScroll () {
+    //   // var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+    //   let dayNum, parentScrollT, childOffsetT
+    //   if (this.roadList.length > 0) {
+    //     dayNum = Math.floor(this.roadList.length / 2)
+    //     parentScrollT = document.querySelector('#dayListJs').scrollTop
+    //     childOffsetT = document.getElementsByClassName('singleDayJs')[dayNum].offsetTop
+    //   }
+    //   if (parentScrollT > childOffsetT) {
+    //     if (this.total !== 0 && this.roadList.length < this.total) {
+    //       this.pageNum = this.pageNum + 1
+    //       this.getData(true, this.sentDays, this.sentType, this.sentTheme)
+    //     }
+    //   }
+    // },
+    getMoreBypage () {
+      if (this.total !== 0 && this.roadList.length < this.total) {
+        // console.log('长度：' + this.roadList.length)
+        this.loading = true
+        let _total = parseInt((this.total + '').slice(0, 1))
+        if (this.pageNum < _total) {
+          this.pageNum = this.pageNum + 1
+          this.getData(true, this.sentDays, this.sentType, this.sentTheme)
+        }
+        // this.pageNum = this.pageNum + 1
+      }
+    },
+    showFilter (id) {
+      this.isShowFilter = true
+      this.selected = id
+    },
+    hidFilter () {
+      this.isShowFilter = false
+      this.selected = ''
+    },
+    refreshList (type, cellKey) {
+      // debugger;
+      switch (type) {
+        case 'sortList':
+          if (cellKey === 'all') {
+            this.orderBy = ''
+            this.orderDesc = ''
+          } else {
+            this.orderBy = cellKey.split('-')[0]
+            this.orderDesc = cellKey.split('-')[1]
+          }
+          this.cellSelectedSort = cellKey
+          break
+        case 'themeList':
+          if (cellKey === 'all') {
+            this.cellSelectedTheme = 'all'
+          } else {
+            this.cellSelectedTheme = this.themeList[cellKey - 1].name
+          }
+          break
+        case 'daysList':
+          if (cellKey === 'all') {
+            this.cellSelectedDays = 'all'
+          } else {
+            this.cellSelectedDays = cellKey
+          }
+          break
+        case 'wayList':
+          if (cellKey === 'all') {
+            this.cellSelectedWay = 'all'
+          } else {
+            this.cellSelectedWay = cellKey
+          }
+          break
+        }
+      this.pageNum = 1
+      this.isShowFilter = false
+      this.sentDays = this.cellSelectedDays === 'all' ? '' : this.cellSelectedDays,
+      this.sentType = this.cellSelectedWay === 'all' ? '' : this.cellSelectedWay,
+      this.sentTheme = this.cellSelectedTheme === 'all' ? '' : this.cellSelectedTheme
+      this.getData(false, this.sentDays, this.sentType, this.sentTheme)
+    },
+    getData (isPush, days, type, theme) {
+      getRoadList(this.pageNum, this.pageSize, days, type, theme, this.orderBy, this.orderDesc).then(res => {
+        if (res && res.data.state === 1 && res.data.data.list) {
+          // this.roadList = res.data.data.list;
+          if (!isPush) {
+            this.total = res.data.data.total
+          }
+          let roadList = res.data.data.list.map(d => ({
+            days: d.DAYS,
+            price: d.MIN_PRICE,
+            pic: d.IMAGE,
+            startingPoint: d.START_ADDRESS,
+            id: d.PRODUCT_ID,
+            describe: d.PRODUCT_NAME
+          }))
+          this.roadList = isPush ? this.roadList.concat(roadList) : roadList
+          // this.roadList = roadList
+          this.loading = false
+        }
+      })
+    },
+    getRoadListData () {
+      getRoadListAndParam(this.pageNum, this.pageSize).then(resList => {
+        // debugger;
+        let res = resList[0]
+        let fliters = resList[1]
+        if (res && res.data.state === 1 && res.data.data.list) {
+          // this.roadList = res.data.data.list;
+          this.total = res.data.data.total
+          this.roadList = res.data.data.list.map(d => ({
+            days: d.DAYS,
+            price: d.MIN_PRICE,
+            pic: d.IMAGE,
+            startingPoint: d.START_ADDRESS,
+            id: d.PRODUCT_ID,
+            describe: d.PRODUCT_NAME
+          }))
+        }
+        if (fliters && fliters.data.state === 1) {
+          this.daysList = fliters.data.data.daysList.map((d, index) => ({
+            name: d,
+            cellKey: index + 1
+          }))
+          this.themeList = fliters.data.data.themeList.map((d, index) => ({
+            name: d,
+            cellKey: index + 1
+          }))
+          this.wayList = fliters.data.data.typeList.map((d) => ({
+            name: d.NAME,
+            cellKey: d.ID
+          }))
+        }
+      })
+    }
+  }
+}
+</script>
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+
+  @import "../style/main.less";
+
+  .mint-tab-container {
+    margin-top: 5rem;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    background: @white;
+  }
+
+  .filter {
+    /*min-height: 130px;*/
+    padding: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    .btn {
+      /*flex-basis: 0;*/
+      flex-grow: 0;
+      text-align: center;
+      margin: 0.4rem;
+      .px2rem(margin-top, 4);
+      .px2rem(margin-bottom, 4);
+      .px2rem(flex-basis, 75);
+      .px2rem(font-size, 12);
+
+      /*font-size: @font-12;*/
+    }
+  }
+
+  .content {
+    margin-top: 2.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /*.show-tab{*/
+  /*margin-top: 5rem;*/
+  /*}*/
+
+  .card {
+    .px2rem(padding, 8);
+    border: 0;
+    background: #eee;
+    border-radius: 0;
+    color: #fff;
+
+    .card-img-top {
+      .px2rem(border-radius, 5);
+      .px2rem(height, 188);
+      object-fit: cover;
+    }
+
+    .card-text {
+      width: 63%;
+      .px2rem(line-height, 20);
+      .px2rem(margin-bottom, 5);
+      position:relative;
+      line-height:1.4em;
+      /* 3 times the line-height to show 3 lines */
+      height:2.8em;
+      overflow:hidden;
+    }
+
+    /*.card-text::after {
+      content:"...";
+      font-weight:bold;
+      position:absolute;
+      bottom:0;
+      right:0;
+      padding:0 20px 1px 45px;
+    }*/
+    .card-title {
+      position: absolute;
+      .px2rem(left, 8);
+      .px2rem(top, 6);
+      /*border:1px solid red;*/
+      /*background: @orange;*/
+      /*padding: 5px;*/
+
+      .iconfont:before {
+        color: #eb4710;
+        /*.px2rem(font-size, 80);*/
+        font-size: 5.4rem;
+        margin-left: -1rem;
+        transform: rotate(-90deg);
+        margin-top: -2rem;
+        display: inline-block;
+      }
+
+      .day-num {
+        z-index: 0;
+        position: absolute;
+        top: 1.3rem;
+        left: 0.5rem;
+      }
+    }
+
+    .black-overlay {
+      background-color: rgba(0, 0, 0, 0.3);
+      position: absolute;
+      /*top: 65%;*/
+      right: 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      .px2rem(padding, 8);
+      .px2rem(height, 77);
+      .px2rem(border-bottom-right-radius, 5);
+      .px2rem(border-bottom-left-radius, 5);
+
+      .price {
+        position: absolute;
+        right: 2%;
+        bottom: 0rem;
+        /*width: 28%;*/
+        .price-num {
+          .px2rem(font-size, 25);
+        }
+      }
+    }
+
+    .startingPoint {
+      position: absolute;
+      bottom: 0.25rem;
+    }
+
+  }
+
+  .black-over {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /*.slide-enter-active,.slide-leave-active{
+    transition: all 0.5s
+  }
+  .slide-enter {
+    // 整个元素从右到左滑入
+    transform: translate3d(100%, 0, 0)
+  }*/
+  .card-img-top[lazy=loading] {
+    .px2rem(width, 30);
+    .px2rem(height, 30);
+    margin: 0 auto;
+    .px2rem(margin-top, 79);
+    .px2rem(margin-bottom, 79);
+  }
+</style>
+
+

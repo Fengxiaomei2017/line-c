@@ -1,0 +1,89 @@
+<template>
+  <div class="timeline">
+    <div class="timeline-line">
+      <div class="timeline-post turqoise-post" v-for="item in itemList">
+        <div class="timeline-icon icon-dot-full">
+          <div class="icon-placeholder white text-center">{{item.icon}}</div>
+        </div>
+        <div class="timeline-content">
+          <div class="yellow">{{item.content}}</div>
+          <div class="font-12">{{item.theTime}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</template>
+
+<script>
+
+  export default {
+    name: 'TimeLine',
+    props: {
+
+      itemList: {
+        type: Array
+      }
+//    methods: {
+//      cancel () {
+//        this.$emit('dialog', {flag: false})
+//      },
+//      sure () {
+//        this.$emit('dialog', {flag: true})
+//      }
+//    }
+    }
+  }
+
+
+</script>
+
+<style lang="less" type="text/less" scoped>
+  @import "../style/main.less";
+
+  .timeline-line {
+
+    border-left: 2px solid @yellow;
+    display: block;
+
+    margin-left: 2.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+
+  }
+
+  .timeline-icon {
+    position: absolute;
+    left: 0;
+    border-radius: 50%;
+    .px2rem(height, 40);
+    .px2rem(width, 40);
+    .px2rem(line-height, 40);
+    .px2rem(margin-left, 20);
+
+    background-color: @yellow;
+  }
+
+  .timeline-post {
+    margin: 0;
+    width: 100%;
+    border: 0 none;
+    box-sizing: border-box;
+    .timeline-content {
+      /*background: #fff;*/
+      position: relative;
+
+      /*-webkit-transition: all .4s;*/
+      /*-moz-transition: all .4s;*/
+      /*transition: all .4s;*/
+
+      .px2rem(margin-left, 30);
+      .px2rem(margin-right, 20);
+      .px2rem(margin-top, 20);
+    }
+
+  }
+
+</style>
+
+

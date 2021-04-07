@@ -1,0 +1,483 @@
+<template>
+  <div>
+    <!--<mt-header fixed title="线路列表">-->
+    <!--<router-link to="/" slot="left">-->
+    <!--<mt-button icon="back"></mt-button>-->
+    <!--</router-link>-->
+    <!--<router-link to="/my-orders" slot="right">-->
+    <!--<i class="iconfont icon-dingdan"></i>-->
+    <!--</router-link>-->
+    <!--</mt-header>-->
+    <header class="mint-header is-fixed">
+      <div class="mint-header-button is-left">
+        <div class="">
+          <button class="mint-button mint-button--default mint-button--normal">
+            <span class="mint-button-icon"><i class="mintui mintui-back"></i></span>
+            <label class="mint-button-text"></label>
+          </button>
+        </div>
+      </div>
+      <h1 class="mint-header-title">线路列表</h1>
+      <div class="mint-header-button is-right">
+        <a data-v-c1010688="" href="#/my-orders" class=""><i data-v-c1010688="" class="iconfont icon-dingdan"></i></a>
+      </div>
+    </header>
+    <Tab :tab-list="tablist" :selected="selected" :dropdown="true" v-on:selectedTab="showFilter"></Tab>
+    <mt-tab-container :class="{'d-none':!isShowFilter}">
+      <mt-tab-container-item id="theme" v-show="selected==='theme'">
+        <div class="filter">
+          <button type="button" @click="refreshList('themeList','all')" class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedTheme==='all'}">全部
+          </button>
+          <button type="button" v-for="item in themeList" @click="refreshList('themeList',item.cellKey)"
+                  class="btn btn-sm" :class="{'btn-yellow':cellSelectedTheme===item.cellKey}">{{item.name}}
+          </button>
+        </div>
+
+      </mt-tab-container-item>
+      <mt-tab-container-item id="days" v-show="selected==='days'">
+        <div class="filter">
+          <button type="button" @click="refreshList('daysList','all')" class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedDays==='all'}">全部
+          </button>
+          <button type="button" v-for="item in daysList" @click="refreshList('daysList',item.cellKey)"
+                  class="btn btn-sm" :class="{'btn-yellow':cellSelectedDays===item.cellKey}">{{item.name}}
+          </button>
+        </div>
+      </mt-tab-container-item>
+
+      <mt-tab-container-item id="way" v-show="selected==='way'">
+        <div class="filter">
+          <button type="button" @click="refreshList('wayList','all')" class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedWay==='all'}">全部
+          </button>
+          <button type="button" v-for="item in wayList" @click="refreshList('wayList',item.cellKey)" class="btn btn-sm"
+                  :class="{'btn-yellow':cellSelectedWay===item.cellKey}">{{item.name}}
+          </button>
+        </div>
+      </mt-tab-container-item>
+      <mt-tab-container-item id="sort" v-show="selected==='sort'">
+        <div class="filter">
+          <button type="button" v-for="item in sortList" @click="refreshList('sortList',item.cellKey)"
+                  class="btn btn-sm" :class="{'btn-yellow':cellSelectedWay===item.cellKey}">{{item.name}}
+          </button>
+        </div>
+      </mt-tab-container-item>
+    </mt-tab-container>
+
+
+    <div class="content" v-infinite-scroll="getMoreBypage" infinite-scroll-disabled="loading"
+         infinite-scroll-distance="10"
+         id="dayListJs">
+      <router-link
+        class="card img-fluid singleDayJs"
+        :key="road.id"
+        v-for="road in roadList"
+        :to="{name:'Details',params:{id:road.id}}">
+
+        <img class="card-img-top" v-lazy="road.pic">
+        <div class="card-title font-18">
+          <i class="iconfont icon-shuqianbookmark11"></i>
+          <div class="white font-16 day-num">{{road.days}}天</div>
+        </div>
+        <div class="card-img-overlay">
+          <div class="black-overlay">
+            <p class="card-text">{{road.describe}}</p>
+            <div class="startingPoint small strong">[{{road.startingPoint}}出发]</div>
+            <div class="price yellow"><span>￥</span>
+              <b class="price-num">{{road.price}}</b><span> 起</span>
+            </div>
+          </div>
+        </div>
+      </router-link>
+
+    </div>
+    <div class="black-over" :class="{'d-none':!isShowFilter}" @click="hidFilter"></div>
+  </div>
+</template>
+
+<script>
+  import {setStore, getStore} from '@/config/mUtils'
+  import avatar from '@/assets/timg.jpg'
+  import Tab from '@/components/tab'
+  import {getRoadList, getRoadListAndParam} from '@/api/getData.js'
+  import Vue from 'vue'
+  import {InfiniteScroll} from 'mint-ui'
+
+
+  Vue.component(Tab.name, Tab);
+
+  export default {
+    name: 'List',
+    data () {
+      return {
+        selected: '',
+        loading: false,
+        cellSelectedTheme: 'all',//选中过滤子项
+        cellSelectedDays: 'all',//选中过滤子项
+        cellSelectedWay: 'all',//选中过滤子项
+        cellSelectedSort: 'all',//选中过滤子项
+        isShowFilter: false,
+        pageNum: 1,
+        pageSize: 10,
+        total: 0,
+        // days: '',
+        // type:'',
+        // theme:'',
+        orderBy: '',//根据什么过滤
+        orderDesc: '',
+        tablist: [{
+          tabID: 'theme',
+          tabText: '线路主题',
+
+        }, {
+          tabID: 'days',
+          tabText: '游玩天数',
+
+        }, {
+          tabID: 'way',
+          tabText: '出行方式',
+
+        }, {
+          tabID: 'sort',
+          tabText: '排序'
+        }],
+        themeList: [{
+          name: '全部', cellKey: 'all'
+        }, {
+          name: '主题2', cellKey: '主题2'
+        }, {
+          name: '主题3', cellKey: '主题3'
+        }],
+        daysList: [{
+          name: '全部', cellKey: 'all'
+        }, {
+          name: '1天', cellKey: 'day-1'
+        }, {
+          name: '2-3天', cellKey: 'day-2-3'
+        }, {
+          name: '4-5天', cellKey: 'day-4-5'
+        }, {
+          name: '5-10天', cellKey: 'day-5-10'
+        }, {
+          name: '10-15天', cellKey: 'day-10-15'
+        }],
+        wayList: [{
+          name: '全部', cellKey: 'all'
+        }, {
+          name: '包车', cellKey: 'chartered'
+        }, {
+          name: '拼车', cellKey: 'sharing'
+        }],
+        sortList: [{
+          name: '综合排序', cellKey: 'all'
+        }, {
+          name: '受欢迎程度', cellKey: 'views-desc'
+        }, {
+          name: '价格最高', cellKey: 'price-aesc'
+        }, {
+          name: '价格最低', cellKey: 'price-desc'
+        },
+          // {
+          //   name: '评论最多', cellKey: 'comments-desc'
+          // },
+          {
+            name: '评分最高', cellKey: 'comments-desc'
+          },
+          // {
+          //   name: '销量最多', cellKey: 'sharing'
+          // }
+        ],
+        roadList: []
+      }
+    },
+    created () {
+      //pageNum, pageSize,days,type,theme,orderBy,orderDesc
+      this.getRoadListData()
+      // getRoadListAndParam(this.pageNum, this.pageSize).then(resList => {
+      //   // debugger;
+      //   let res = resList[0]
+      //   let fliters = resList[1]
+      //   if (res && res.data.state === 1 && res.data.data.list) {
+      //     // this.roadList = res.data.data.list;
+      //     this.total = res.data.data.total
+      //     this.roadList = res.data.data.list.map(d => ({
+      //       days: d.DAYS,
+      //       price: d.MIN_PRICE,
+      //       pic: d.IMAGE,
+      //       startingPoint: d.START_ADDRESS,
+      //       id: d.PRODUCT_ID,
+      //       describe: d.PRODUCT_NAME
+      //     }))
+      //     console.log(this.roadList)
+      //   }
+      //   if (fliters && fliters.data.state === 1) {
+      //     this.daysList = fliters.data.data.daysList.map((d, index) => ({
+      //       name: d,
+      //       cellKey: index + 1
+      //     }))
+      //     this.themeList = fliters.data.data.themeList.map((d, index) => ({
+      //       name: d,
+      //       cellKey: index + 1
+      //     }))
+      //     this.wayList = fliters.data.data.typeList.map((d) => ({
+      //       name: d.NAME,
+      //       cellKey: d.ID
+      //     }))
+      //   }
+      // })
+    },
+    mounted () {
+      document.addEventListener('touchstart', this.handleScroll)
+    },
+    destroyed () {
+      document.removeEventListener('touchstart', this.handleScroll)
+    },
+    methods: {
+      handleScroll () {
+        // var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+        let dayNum = Math.floor(this.roadList.length / 2)
+        var parentScrollT = document.querySelector('#dayListJs').scrollTop
+        var childOffsetT = document.getElementsByClassName('singleDayJs')[dayNum].offsetTop
+        // console.log('父元素：' + parentScrollT)
+        // console.log('子元素：' + childOffsetT)
+        if (parentScrollT > childOffsetT) {
+          this.pageSize += this.pageSize
+          this.getRoadListData()
+        }
+      },
+      getMoreBypage () {
+        if (this.total !== 0 && this.roadList.length < this.total) {
+          this.loading = true;
+          this.pageNum = this.pageNum + 1
+          this.getData(true)
+        }
+        // setTimeout(() => {
+        //   let last = this.list[this.list.length - 1];
+        //   for (let i = 1; i <= 10; i++) {
+        //     this.list.push(last + i);
+        //   }
+        //   this.loading = false;
+        // }, 2500);
+
+      },
+      showFilter (id) {
+        this.isShowFilter = true
+        this.selected = id
+      },
+      hidFilter () {
+        this.isShowFilter = false
+        this.selected = ''
+      },
+      refreshList (type, cellKey) {
+        switch (type) {
+          case 'sortList':
+            if (cellKey === 'all') {
+              this.orderBy = ''
+              this.orderDesc = ''
+            } else {
+              this.orderBy = cellKey.split('-')[0]
+              this.orderDesc = cellKey.split('-')[1]
+            }
+            this.cellSelectedSort = cellKey
+            break
+
+          case 'themeList':
+            this.cellSelectedTheme = cellKey
+            break
+
+          case 'daysList':
+            this.cellSelectedDays = cellKey
+            break
+          case 'wayList':
+            this.cellSelectedWay = cellKey
+            break
+        }
+        this.pageNum = 1
+        this.pageSize = 20
+        this.isShowFilter = false
+        this.getData(false)
+      },
+      getData (isPush) {
+        let days = this.cellSelectedDays === 'all' ? '' : this.cellSelectedDays,
+          type = this.cellSelectedWay === 'all' ? '' : this.cellSelectedWay,
+          theme = this.cellSelectedTheme === 'all' ? '' : this.cellSelectedTheme
+
+        // getRoadList(this.pageNum, this.pageSize, days, type, theme, this.orderBy, this.orderDesc).then(res => {
+        //   if (res && res.data.state === 1 && res.data.data.list) {
+        //     // this.roadList = res.data.data.list;
+        //     let roadList = res.data.data.list.map(d => ({
+        //       days: d.DAYS,
+        //       price: d.MIN_PRICE,
+        //       pic: d.IMAGE,
+        //       startingPoint: d.START_ADDRESS,
+        //       id: d.PRODUCT_ID,
+        //       describe: d.PRODUCT_NAME
+        //     }))
+
+        //     this.roadList = isPush ? this.roadList.concat(roadList) : roadList;
+        //     this.loading = false;
+        //   }
+        // })
+      },
+      getRoadListData () {
+        getRoadListAndParam(this.pageNum, this.pageSize).then(resList => {
+          // debugger;
+          let res = resList[0]
+          let fliters = resList[1]
+          if (res && res.data.state === 1 && res.data.data.list) {
+            // this.roadList = res.data.data.list;
+            this.total = res.data.data.total
+            this.roadList = res.data.data.list.map(d => ({
+              days: d.DAYS,
+              price: d.MIN_PRICE,
+              pic: d.IMAGE,
+              startingPoint: d.START_ADDRESS,
+              id: d.PRODUCT_ID,
+              describe: d.PRODUCT_NAME
+            }))
+            // console.log(this.roadList)
+          }
+          if (fliters && fliters.data.state === 1) {
+            this.daysList = fliters.data.data.daysList.map((d, index) => ({
+              name: d,
+              cellKey: index + 1
+            }))
+            this.themeList = fliters.data.data.themeList.map((d, index) => ({
+              name: d,
+              cellKey: index + 1
+            }))
+            this.wayList = fliters.data.data.typeList.map((d) => ({
+              name: d.NAME,
+              cellKey: d.ID
+            }))
+          }
+        })
+      }
+    }
+  }
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+
+  @import "../style/main.less";
+
+  .mint-tab-container {
+    margin-top: 5rem;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    background: @white;
+  }
+
+  .filter {
+    /*min-height: 130px;*/
+    padding: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    .btn {
+      /*flex-basis: 0;*/
+      flex-grow: 0;
+      text-align: center;
+      margin: 0.4rem;
+      .px2rem(margin-top, 4);
+      .px2rem(margin-bottom, 4);
+      .px2rem(flex-basis, 75);
+      .px2rem(font-size, 12);
+
+      /*font-size: @font-12;*/
+    }
+  }
+
+  .content {
+    margin-top: 2.5rem;
+  }
+
+  /*.show-tab{*/
+  /*margin-top: 5rem;*/
+  /*}*/
+
+  .card {
+    .px2rem(padding, 8);
+    border: 0;
+    background: #eee;
+    border-radius: 0;
+    color: #fff;
+
+    .card-img-top {
+      .px2rem(border-radius, 5);
+      .px2rem(height, 188);
+      object-fit: cover;
+    }
+
+    .card-text {
+      .px2rem(line-height, 20);
+    }
+
+    .card-title {
+      position: absolute;
+      .px2rem(left, 8);
+      .px2rem(top, 15);
+      /*border:1px solid red;*/
+      /*background: @orange;*/
+      /*padding: 5px;*/
+
+      .iconfont:before {
+        color: #eb4710;
+        /*.px2rem(font-size, 80);*/
+        font-size: 5.4rem;
+        margin-left: -1rem;
+        transform: rotate(-90deg);
+        margin-top: -2rem;
+        display: inline-block;
+      }
+
+      .day-num {
+        z-index: 0;
+        position: absolute;
+        top: 1.3rem;
+        left: 0.5rem;
+      }
+    }
+
+    .black-overlay {
+      background-color: rgba(0, 0, 0, 0.3);
+      position: absolute;
+      /*top: 65%;*/
+      right: 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      .px2rem(padding, 10);
+      .px2rem(height, 75);
+      .px2rem(border-bottom-right-radius, 5);
+      .px2rem(border-bottom-left-radius, 5);
+
+      .price {
+        position: absolute;
+        right: 1rem;
+        bottom: 0rem;
+        .price-num {
+          .px2rem(font-size, 25);
+        }
+      }
+    }
+
+    .startingPoint {
+      position: absolute;
+      bottom: 0.25rem;
+    }
+
+  }
+
+  .black-over {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+</style>
+
+

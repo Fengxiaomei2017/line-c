@@ -1,0 +1,148 @@
+<template>
+  <div class="rePassword">
+    <div class="rePassword-body">
+      <input type="tel" placeholder="手机号" v-model="phoneNum"/>
+      <div class="code-item">
+        <input class="code" type="number" placeholder="验证码" v-model="verificationCode"/>
+        <code-item :phoneNum="phoneNum" v-on:errorMsg="errorMsg" :isCodeRepassword="true"></code-item>
+      </div>
+      <input type="text" class="pwd" placeholder="请输入密码" v-model="password"/>
+    </div>
+    <p class="msg">{{msg}}</p>
+    <button class="btn rePassword-btn" v-on:click="_regPassword">确认修改</button>
+  </div>
+</template>
+
+<script>
+import code from '@/components/code'
+import {updatePassword} from '@/api/getData'
+import {Toast} from 'mint-ui'
+
+export default {
+  data () {
+    return {
+      phoneNum: '',
+      password: '',
+      verificationCode: '',
+      msg: ''
+    }
+  },
+  created () {
+    document.querySelector('title').innerText = '修改密码'
+  },
+  components: {
+    codeItem: code
+  },
+  watch: {
+    phoneNum () {
+      this.msg = ''
+    },
+    password () {
+      this.msg = ''
+    }
+  },
+  methods: {
+    _regPassword () {
+      if (!this.phoneNum) {
+        Toast({
+          message: '手机号不能为空',
+          type: 'warn',
+          position: 'middle'
+        })
+      } else if (isNaN(this.phoneNum)) {
+        Toast({
+          message: '请输入正确的手机号',
+          type: 'warn',
+          position: 'middle'
+        })
+      } else if (this.phoneNum.toString().length !== 11) {
+        Toast({
+          message: '请输入11位手机号',
+          type: 'warn',
+          position: 'middle'
+        })
+      } else {
+        updatePassword(this.phoneNum, this.verificationCode, this.password).then((res) => {
+          if (res.data.msg === 'error') {
+            this.msg = res.data.message
+          } else {
+            this.$router.push('/login')
+          }
+        }).catch(e => console.log(e))
+      }
+    },
+    errorMsg (msg) {
+      this.msg = msg.text
+    }
+  }
+}
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less">
+  @import "../style/main.less";
+
+  .rePassword {
+    /*height: 100%;*/
+    /*width: 100%;*/
+    .px2rem(padding-top, 15);
+    background-color: @white;
+    .rePassword-body {
+      width: 100%;
+      .px2rem(height, 120);
+      background-color: #ffffff;
+      input {
+        display: block;
+        height: 2.3rem;
+        .px2rem(width, 300);
+
+        margin: 0 auto;
+        border: none;
+        &:focus{
+          outline: none;
+        }
+      }
+      .code-item {
+        position: relative;
+        height: 2.6rem;
+        width: 18.75rem;
+        margin: 0 auto;
+        border-bottom: 1px solid #d2d2d2;
+        border-top: 1px solid #d2d2d2;
+        padding-top: 0.1rem;
+        input {
+          position: absolute;
+          .px2rem(width, 200);
+          left: 0;
+          right: 0;
+          margin: 0;
+        }
+      }
+      .pwd {
+        border-bottom: 1px solid #d2d2d2;
+        height: 2.5rem;
+      }
+    }
+    .rePassword-btn {
+      display: block;
+      width: 18.75rem;
+      /* height: 2.5rem; */
+      background-color: #ffa912;
+      /* font-size: 1.25rem; */
+      margin: 0 auto;
+      margin-top: 2.5rem;
+      /* border-radius: 5px; */
+      /* text-align: center; */
+      color: #fff;
+      &:active {
+        background-color: #338bc8;
+      }
+    }
+    .msg {
+      position: absolute;
+      .px2rem(margin-top, 10);
+      .px2rem(margin-left, 35);
+      .px2rem(font-size, 15);
+      color: red;
+    }
+  }
+</style>

@@ -1,0 +1,170 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+
+const Home = () => {
+  return require.ensure([], () => {
+    return require('@/pages/home')
+  })
+}
+const List = () => {
+  return require.ensure([], () => {
+    return require('@/pages/list')
+  })
+}
+const NewList = () => {
+  return require.ensure([], () => {
+    return require('@/pages/list520')
+  })
+}
+const Details = () => {
+  return require.ensure([], () => {
+    return require('@/pages/details')
+  })
+}
+
+const ChooseDate = () => {
+  return require.ensure([], () => {
+    return require('@/pages/choose-date')
+  })
+}
+const  OrderConfirmation= () => {
+  return require.ensure([], () => {
+    return require('@/pages/order-confirmation')
+  })
+}
+const MyOrders = () => {
+  return require.ensure([], () => {
+    return require('@/pages/my-orders')
+  })
+}
+const OrderDetails = () => {
+  return require.ensure([], () => {
+    return require('@/pages/order-details')
+  })
+}
+const Login = () => {
+  return require.ensure([], () => {
+    return require('@/pages/login')
+  })
+}
+const WXLogin = () => {
+  return require.ensure([], () => {
+    return require('@/pages/wxLogin')
+  })
+}
+const Register = () => {
+  return require.ensure([], () => {
+    return require('@/pages/register')
+  })
+}
+const RePassword = () => {
+  return require.ensure([], () => {
+    return require('@/pages/rePassword')
+  })
+}
+const Comment = () => {
+  return require.ensure([], () => {
+    return require('@/pages/comment')
+  })
+}
+
+Vue.use(Router)
+
+export default new Router({
+  //mode: 'history',
+  routes: [
+    {
+      path: '/',
+      component: Home,
+      meta: {keepAlive: true}
+    }, {
+      path: '/login',
+      name:Login,
+      component: Login,
+      meta: {requireAuth: false}
+    }, {
+      path: '/wxLogin',
+      name:WXLogin,
+      component: WXLogin,
+      // meta: {requireAuth: true}
+    }, {
+      path: '/register',
+      name: Register,
+      component: Register
+      // meta: {keepAlive: true}
+    }, {
+      path: '/rePassword',
+      name: RePassword,
+      component: RePassword
+      // meta: {keepAlive: true}
+    }, {
+      path: '/list',
+      name: List,
+      component: List,
+      meta: {requireAuth: false}
+    }, {
+      path: '/newList',
+      component: NewList
+      // meta: {requireAuth: false}
+    }, {
+      path: '/home',
+      name: 'Home',
+      component: Home
+    }, {
+      path: '/details:id',
+      name: 'Details',
+      component: Details
+    }, {
+      path: '/choose-date/:id',
+      name: 'ChooseDate',
+      component: ChooseDate,
+      meta: {requireAuth: true}
+    }, {
+      // path: '/order-confirmation/:stockGoodsId/:stockGoodsName/:adult/:child/:orderMoney/:day',
+      path: '/order-confirmation',
+      name: 'OrderConfirmation',
+      component: OrderConfirmation,
+      meta: {requireAuth: true}
+    }, {
+      path: '/my-orders',
+      name: 'MyOrders',
+      component: MyOrders,
+      meta: {requireAuth: true}
+    }, {
+      path: '/order-details',
+      name: 'OrderDetails',
+      component: OrderDetails,
+      meta: {requireAuth: true}
+    }, {
+      path: '/comment',
+      component: Comment
+      // meta: {requireAuth: true}
+    }
+  ]
+})
+
+/*export default new Router({
+  //base: '/lines/',
+  routes: [
+    {
+      path: '',
+      component: Home,
+    },
+    {
+      path: '/',
+      component: APP,
+      children: [
+        {
+          path: '/list',
+          name: List,
+          component: List
+        },
+        {
+          path: '/home',
+          name: 'Home',
+          component: Home,
+        }
+      ]
+    }
+  ]
+})*/

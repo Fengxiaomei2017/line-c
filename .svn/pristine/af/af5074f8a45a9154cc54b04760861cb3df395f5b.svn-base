@@ -1,0 +1,81 @@
+<template>
+<transition name="slide-fade">
+  <div>
+    <transition name="slide1">
+      <img
+        v-show="firstImg"
+        class="start-page"
+        @load="nextImg"
+        src="static/img/startpage1.png">
+    </transition>
+    <transition name="slide">
+    <img
+      v-show="secondImg"
+      class="start-page"
+      @load="nextHome"
+      @click="clicktoHome"
+      src="static/img/startpage2.jpg">
+    </transition>
+  </div>
+</transition>
+</template>
+<script>
+export default {
+  data () {
+    return {
+      firstImg: true,
+      secondImg: false
+    }
+  },
+  methods: {
+    nextImg () {
+      setTimeout(() => {
+        this.firstImg = false,
+        this.secondImg = true
+      }, 2000)
+      // setTimeout(() => {
+      //   this.$router.push('/home')
+      // }, 6000)
+    },
+    nextHome () {
+      setTimeout(() => {
+        this.$router.push('/home')
+      }, 4000)
+    },
+    clicktoHome () {
+      this.$router.push('/home')
+    }
+    // checkImg () {
+    //   let num = Math.ceil(Math.random() * 10)
+    //   if (num > 5) {
+    //     this.imgUrl = 'static/img/startpage2.jpg'
+    //   } else {
+    //     this.imgUrl = 'static/img/startpage1.png'
+    //   }
+    // }
+  }
+}
+</script>
+<style scoped>
+  .start-page {
+    width: 100vw;
+    height: 100vh;
+  }
+  .slide-fade-leave-active {
+    transition: all 1s cubic-bezier(1.0,0.5,0.8,1.0);
+    /*transition: all 2s cubic-bezier(.94,-0.25,.32,1.31);*/
+    opacity: 0;
+  }
+  .slide1-leave-active {
+    transition: all .5s;
+  }
+  .slide1-leave-to {
+    transform: translate3d(-100%, 0, 0);
+  }
+  .slide-enter-active {
+    transition: all .5s;
+  }
+  /*.slide-enter {
+    transform: translate3d(100%, 0, 0);
+  }*/
+</style>

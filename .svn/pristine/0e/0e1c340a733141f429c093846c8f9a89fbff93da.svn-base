@@ -1,0 +1,341 @@
+<template>
+<div>
+  <header class="mint-header is-fixed">
+    <a class="mint-header-button is-left" @click="goBack">
+      <i class="mintui mintui-back"></i>
+    </a>
+    <span class="product-name">订单详情</span>
+  </header>
+  <div v-if="order">
+    <div class="content">
+      <div class="content-cell m-0 p-0">
+        <div class="float-right m-2">
+          <button
+            class="btn btn-sm mr-2 btn-default"
+            v-if="orderStateCfg[order.orderState].options"
+            v-for="btn in orderStateCfg[order.orderState].options"
+            :class="btn.btnStyle"
+            @click="btn.fun(order.orderNo,order.orderMoney,order.orderDetailInfoVo.productId)">{{btn.btn}}
+          </button>
+        </div>
+        <TimeLine :item-list="timeList"></TimeLine>
+      </div>
+      <div class="content-cell">
+        <div class="cell-title">订单信息</div>
+        <div class="cell-body">
+          <div>订单号： {{order.orderNo}}</div>
+          <div>下单时间： {{order.orderTime}}</div>
+          <div>支付方式： 微信支付</div>
+          <div>订单金额： ￥{{order.orderMoney}}</div>
+        </div>
+      </div>
+      <div class="content-cell">
+        <div class="cell-title">预订信息</div>
+        <div class="cell-body" v-if="order.orderDetailInfoVo">
+          <div>{{order.orderDetailInfoVo.productName}}</div>
+          <div>{{order.orderDetailInfoVo.productSubTitle}}</div>
+          <div>出行方案： {{order.orderDetailInfoVo.skuName}}</div>
+          <div>出行时间： {{order.tripTime}}</div>
+
+          <div>出行人数： {{order.orderDetailInfoVo.adultNumber}}成人 <span v-if="order.orderDetailInfoVo.childNumber > 0">{{order.orderDetailInfoVo.childNumber}}儿童</span></div>
+        </div>
+        <div class="cell-body" v-else>
+          <div>{{order.orderName}}</div>
+          <div>{{order.hotelName}}</div>
+          <div>房间数： {{order.goodsNum}}间房&nbsp;&nbsp;&nbsp;
+              住{{order.night}}晚</div>
+          <!-- <div>出行人数： </div> -->
+        </div>
+      </div>
+      <div class="content-cell">
+        <div class="cell-title">联系人</div>
+        <div class="cell-body" v-if="order.orderDetailInfoVo">
+          <div>姓名： {{order.contactPerson}}</div>
+          <div>手机号： {{order.contactPhone}}</div>
+        </div>
+        <div class="cell-body" v-else>
+          <div>姓名： {{order.checkinPerson}}</div>
+          <div>手机号： {{order.contactMobile}}</div>
+        </div>
+      </div>
+    </div>
+    <mt-popup
+      v-model="popupVisiblePayWays"
+      position="bottom" class="popup-pay">
+      <PayCom :orderNo="order.orderNo" :orderMoney="order.orderMoney"></PayCom>
+    </mt-popup>
+    <mt-popup
+      v-model="popupVisibleAsk"
+      position="bottom"
+      class="popup-ask">
+      <div>
+        电话
+        <a href="tel:028-888888">028-888888</a>
+      </div>
+      <div @click="popupVisibleAsk = false">
+        取消
+      </div>
+    </mt-popup>
+    <ToRefund v-if="isRefund" :orderNo="orderNo" v-on:watchRefund="_refundGetdata" ></ToRefund>
+  </div>
+</div>
+</template>
+
+<script>
+import TimeLine from '@/components/time-line'
+import avatar from '@/assets/timg.jpg'
+import {getOrderDetail, cancelOrder, sentUrgeOrder} from '@/api/getData'
+
+import PayCom from '@/components/pay'
+import ToRefund from '@/components/toRefund'
+import Vue from 'vue'
+import {Popup, MessageBox} from 'mint-ui'
+
+Vue.component(TimeLine.name, TimeLine);
+Vue.component(PayCom.name, PayCom);
+Vue.component(Popup.name, Popup);
+//  Vue.component(TabItem.name, TabItem);
+
+export default {
+  name: 'OrderDetails',
+  data() {
+    return {
+      popupVisiblePayWays: false,
+      popupVisibleAsk: false,
+      isRefund: false,
+      reason: '',
+      selected: 'theme',
+      orderStateCfg:  {
+        1: {
+          name: "待支付",
+          state: 1,
+          icon: '￥',
+          options: [{btn: '取消订单', fun: this.cancel, btnStyle: ''}, {
+            btn: '去支付',
+            fun: this.payOrder,
+            btnStyle: 'btn-yellow'
+          }]
+        },
+        2: {
+          name: "待确认",
+          state: 2,
+          icon: 'OK',
+          options: [{btn: '取消订单', fun: this.cancel}, {btn: '催Ta', fun: this.urgeOrder, btnStyle: 'btn-yellow'}]
+        },
+        3: {
+          name: "待消费",
+          state: 3,
+          icon: '￥',
+          options: [{btn: '申请退款', fun: this.refund}]
+        },
+        4: {
+          name: "待评价",
+          state: 4,
+          icon: '√',
+          options: [{btn: '联系客服', fun: this.showPhoneNum}, {btn: '再次购买', fun: this.anginBuy}, {
+            btn: '去评价',
+            fun: this.comment,
+            btnStyle: 'btn-yellow'
+          }]
+        },
+        5: {
+          name: "已完成",
+          state: 5,
+          icon: '√',
+          options: [{btn: '联系客服', fun: this.showPhoneNum}, {btn: '再次购买', fun: this.anginBuy}]
+        },
+        6: {
+          name: "退款申请",
+          state: 6,
+          icon: '￥',
+          options: [{btn: '联系客服', fun: this.showPhoneNum}, {btn: '再次购买', fun: this.anginBuy}]
+        },
+        7: {
+          name: "退款中",
+          state: 7,
+          icon: '￥',
+          options: [{btn: '联系客服', fun: this.showPhoneNum}, {btn: '再次购买', fun: this.anginBuy}]
+        },
+        8: {
+          name: "退款成功",
+          state: 8,
+          icon: '√',
+          options: [{btn: '联系客服', fun: this.showPhoneNum}, {btn: '再次购买', fun: this.anginBuy}]
+        },
+        9: {
+          name: "已取消（商家）",
+          state: 9,
+          icon: '√'
+        },
+        10: {
+          name: "已取消（用户）",
+          state: 10,
+          icon: '√'
+        },
+        11: {
+          name: "已取消（系统）",
+          state: 11,
+          icon: '√'
+        },
+        12: {
+          name: '已评论',
+          state: 12,
+          icon: '√',
+          options: [{btn: '联系客服', fun: this.cancel}, {btn: '再次购买', fun: this.anginBuy}]
+        }
+      },
+      timeList: [],
+      order: ''
+    }
+  },
+  components: {
+    ToRefund
+  },
+  methods: {
+    goBack () {
+      // this.$router.push('/list')
+      this.$router.push('/my-orders')
+    },
+    showPhoneNum () {
+      this.popupVisibleAsk = true
+    },
+    closePopup() {
+      this.popupVisiblePayWays = false
+    },
+    payOrder(orderNo, orderMoney) {
+      this.orderNo = orderNo;
+      this.orderMoney = orderMoney + ''
+      this.popupVisiblePayWays = true
+    },
+    _refundGetdata () {
+      this.isRefund = false
+      this.getData()
+    },
+    cancel(orderNo) {
+      // userId,orderNo
+      MessageBox.confirm('确定取消订单?').then(action => {
+        cancelOrder(this.$store.state.lineUser.id, orderNo).then(res => {
+          if (res && res.data.state === 1) {
+            MessageBox('提示', res.data.message)
+            setTimeout(() => {
+              this.getData()
+            }, 2000)
+          }
+        })
+      })
+    },
+    urgeOrder (orderNo) {
+      if (orderNo) {
+        sentUrgeOrder(orderNo).then(res => {
+          if (res && res.data.state === 1) {
+            MessageBox('提示', res.data.message)
+            this.getData()
+          }
+        })
+      }
+    },
+    comment (orderNo) {
+      this.$router.push({'path': '/comment', query: {orderNo: orderNo}})
+    },
+    anginBuy (e1, e2, e3) {
+      this.$router.push({name: 'Details', params:{id: e3}})
+    },
+    refund (orderNo) {
+      this.isRefund = true
+      this.orderNo = orderNo
+    },
+    getData(){
+      if (this.$store.state.lineUser.id) {
+        getOrderDetail(this.$store.state.lineUser.id, this.orderNo).then(res => {
+          if (res.data.state === 1) {
+            // this.MessageBox('提示', res.data.message);
+            this.order = res.data.data
+            // this.order.orderMoney = this.order.orderMoney + ''
+            // console.log(this.order)
+            let orderStatusInfo = res.data.data.orderStatusInfo
+            // debugger;
+            this.timeList = orderStatusInfo.map(d => ({
+              content: this.orderStateCfg[d.orderState].name,
+              theTime: d.createTime,
+              icon: this.orderStateCfg[d.orderState].icon
+            }))
+            this.timeList.push({
+              content: '订单提交成功',
+              theTime: this.order.orderTime,
+              icon: '√'
+            })
+            //如果创建成果跳转支付页面
+          } else {
+            MessageBox('错误', res.data.message)
+          }
+        })
+      }
+    }
+  },
+  created() {
+    if (this.$route.query.id) {
+      this.orderNo = this.$route.query.id
+      this.getData()
+    }
+  }
+}
+</script>
+
+
+<style lang="less" rel="stylesheet/less" type="text/less" scoped>
+  @import "../style/main.less";
+  .cell-title {
+    .px2rem(margin-bottom, 5);
+  }
+  .float-right {
+    .px2rem(max-width, 168);
+    button {
+      .px2rem(margin-bottom, 8);
+      .px2rem(border-radius, 3);
+    }
+  }
+  /*.content {*/
+  /*position: absolute;*/
+  /*top: 5rem;*/
+  /*bottom: 0;*/
+  /*width: 100%;*/
+  /*left: 0rem;*/
+  /*overflow: auto;*/
+  /*background-color: #eee;*/
+
+  /*.content-cell {*/
+  /*background-color: #fff;*/
+  /*min-height: 2rem;*/
+  /*margin-top: 0.5rem;*/
+  /*padding: 0.5rem;*/
+
+  /*.hotelImg {*/
+  /*background-image: url(../assets/timg.jpg);*/
+  /*height: 5rem;*/
+  /*!* background-origin: border-box; *!*/
+  /*!* background-clip: content-box; *!*/
+  /*background-size: cover;*/
+  /*!*background-repeat: no-repeat*!*/
+  /*}*/
+
+  /*.row + .row {*/
+  /*margin-top: 0.5rem;*/
+  /*}*/
+
+  /*}*/
+
+  /*}*/
+  /*.next-step {*/
+  /*color: @white;*/
+  /*background: @orange;*/
+  /*margin-left: -15px;*/
+  /*text-align: center;*/
+  /*line-height: 3rem;*/
+  /*width: 100%;*/
+  /*}*/
+
+  /*.total {*/
+  /*line-height: 3rem;*/
+  /*text-align: center;*/
+  /*}*/
+</style>

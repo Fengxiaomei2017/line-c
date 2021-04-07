@@ -1,0 +1,210 @@
+<template>
+  <div class="list-container">
+    <header class="mint-header is-fixed">
+      <a class="mint-header-button is-left" @click="goBack">
+        <i class="mintui mintui-back"></i>
+      </a>
+      <span class="mint-header">酒店|民宿</span>
+      <div class="mint-header-button is-right">
+        <a @click="toOrder" class="my-icon"></a>
+      </div>
+    </header>
+    <div class="list-lines">
+      <a class="item-line"
+         v-for="(item,index) in imgList"
+         :href="item.url">
+        <div class="swipe-box">
+          <img class="lazy-imgs card-img" v-lazy="item.imgUrl">
+          <i class="like-icon iconfont icon-jushoucang" @click.prevent="_like(index)"></i>
+        </div>
+        <div class="hotel-text">
+          <span class="place">{{item.subTitle}}</span>
+          <h5 class="hotel-title font-18">{{item.title}}</h5>
+          <p class="hotel-subtitle noWrap font-14">{{item.info}}</p>
+        </div>
+        <img class="icon-detail" :src="item.avatar">
+      </a>
+    </div>
+  </div>
+</template>
+<script>
+import {mapMutations} from 'vuex'
+  export default {
+    data () {
+      return {
+        imgList: []
+      }
+    },
+    created () {
+      this.imgList = [{
+        subTitle: '蒲江明月村',
+        title: '画月',
+        imgUrl: 'static/img/画月.jpeg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=1721147a-5295-4204-bbde-385e682593a1`,
+        info: '竹海 茶园 手作 陶艺 村落',
+        avatar: 'static/img/logo1.jpg'
+      }, {
+        subTitle: '蒲江朝阳湖',
+        title: '寒山',
+        imgUrl: 'static/img/hotel2.jpeg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=2a4c2920-86d5-4e17-8a0c-d2441b3023f9`,
+        info: '寻艺 问道 染坊',
+        avatar: 'static/img/logo2.jpg'
+      }, {
+        subTitle: '若尔盖县辖曼牧场',
+        title: '天边云端',
+        imgUrl: 'static/img/hotel3.jpeg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=b29c0074-12c3-400b-95e4-5665a3184838`,
+        info: '若尔盖 帐篷 九曲黄河 牧场',
+        avatar: 'static/img/logo3.jpg'
+      }, {
+        subTitle: '理县通化乡西山村',
+        title: '浮云牧场',
+        imgUrl: 'static/img/fuyumuchang.jpeg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=67e30e71-c571-4b37-a230-d60de4c0f7d7`,
+        info: '网红 云海 山脉 泳池 羌寨 观星',
+        avatar: 'static/img/logo4.jpg'
+      }, {
+        subTitle: '雅安宝兴县雪山村',
+        title: '田姐家',
+        imgUrl: 'http://119.23.242.151:8080/group2/M00/00/32/oYYBAFsEyZaAJO-BAADdIshgN-4678.jpg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=52eabf1a-fd56-42ec-b720-c695dc481bbd`,
+        info: '天然氧吧 熊猫故乡 茶马古道 长征博物馆',
+        avatar: 'static/img/logo5.jpg'
+      }, {
+        subTitle: '汉源县九襄镇凉山村',
+        title: '后山朴院',
+        imgUrl: 'http://119.23.242.151:8080/group2/M00/00/32/oYYBAFsEyZOAc-IIAAFjAqWLudg544.jpg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=ddfc4b64-0cf7-444a-90fc-9225561928c7`,
+        info: '花海果乡 九襄古镇 茶马古道 九襄石牌坊 佛静山',
+        avatar: 'static/img/logo6.png'
+      }, {
+        subTitle: '四姑娘山镇',
+        title: '巴郎部落',
+        imgUrl: 'http://119.23.242.151:8080/group2/M00/00/32/oYYBAFsEyZGAfOj3AAEiseMgto4906.jpg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=0ededf94-b3b9-405a-a757-42418e814625`,
+        info: '摄影 简藏式 地暖 驴友 家常菜 海子沟 长坪沟',
+        avatar: 'static/img/balangHead.png'
+      }, {
+        subTitle: '三圣乡',
+        title: '觅觅花园',
+        imgUrl: 'static/img/hotel9.jpg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=8a1a1bde-fa7c-4b12-b405-2915d786ffaa`,
+        info: '发呆 独处 泡书吧',
+        avatar: 'static/img/logo9.png'
+      }, {
+        subTitle: '温江寿安镇',
+        title: '淼兮',
+        imgUrl: 'static/img/hotel10.jpg',
+        url: `http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=15a5142f-9692-4ade-aef9-199f205b4606`,
+        info: '野奢 健康 艺术',
+        avatar: 'static/img/miaoxiHead.png'
+      }]
+    },
+    methods: {
+      ...mapMutations([
+        'ORDER_BACK'
+      ]),
+      toOrder () {
+        var orderBack = window.location.href
+        this.ORDER_BACK(orderBack)
+        this.$router.push('/my-orders')
+      },
+      goBack () {
+        this.$router.push('/home')
+      },
+      _like (index) {
+        var iconjs = document.getElementsByClassName('like-icon')
+        if (iconjs[index].className === 'like-icon iconfont icon-jushoucang') {
+          iconjs[index].className = 'like-icon iconfont icon-jushoucanggift'
+          iconjs[index].style.color = 'red'
+        } else {
+          iconjs[index].className = 'like-icon iconfont icon-jushoucang'
+          iconjs[index].style.color = '#fff'
+        }
+      }
+    }
+  }
+</script>
+<style lang="less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+  a:hover, a:active {
+    text-decoration: none;
+  }
+  .list-container {
+    width: 90vw;
+    .px2rem(padding-top, 40);
+    .px2rem(max-width, 500);
+    margin: 20px auto;
+    h4 {
+      .px2rem(margin-bottom, 10);
+    }
+    .item-line {
+      display: block;
+      .px2rem(height, 280);
+      .px2rem(margin-bottom, 10);
+      .swipe-box {
+        position: relative;
+        .card-img {
+          width: 100%;
+          .px2rem(height, 180);
+        }
+        .like-icon {
+          display: block;
+          position: absolute;
+          .px2rem(top, 0);
+          .px2rem(right, 0);
+          z-index: 999;
+          .px2rem(width, 60);
+          .px2rem(height, 60);
+          .px2rem(line-height, 60);
+          text-align: center;
+          font-size: 1.5rem;
+          color: #fff;
+        }
+      }
+      .hotel-text {
+        float: left;
+        /*.px2rem(height, 100);*/
+        .place, .hotel-title {
+          .px2rem(height, 30);
+          .px2rem(line-height, 30);
+        }
+        .place {
+          display: block;
+          .px2rem(height, 30);
+          .px2rem(line-height, 30);
+          color: #3d4b8f;
+        }
+        .hotel-title {
+          margin-bottom: 0;
+          .px2rem(height, 30);
+          .px2rem(line-height, 20);
+          color: #454444;
+          font-weight: bold;
+        }
+        .hotel-subtitle {
+          .px2rem(width, 240);
+          .px2rem(line-height, 20);
+          margin-bottom: 0;
+          color: #C0BDBD;
+        }
+      }
+      .icon-detail {
+        float: right;
+        .px2rem(width, 50);
+        .px2rem(height, 50);
+        .px2rem(margin-top, 20);
+        .px2rem(margin-right, 10);
+        border-radius: 50%;
+      }
+    }
+  }
+  /*.card-img[lazy=loading] {
+    background-image: url('../../static/img/lording.gif');
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+  }*/
+</style>
+
+

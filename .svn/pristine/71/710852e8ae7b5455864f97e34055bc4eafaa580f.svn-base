@@ -1,0 +1,103 @@
+<template>
+  <div class="timeline">
+    <div class="timeline-line">
+      <div class="timeline-post turqoise-post" v-for="item in itemList">
+        <div class="timeline-icon icon-dot-full">
+          <div class="icon-placeholder text-center">D{{item.day}}</div>
+        </div>
+        <div class="timeline-content">
+          <div class=""><span v-for="adds in JSON.parse(item.destination)"> {{adds.address}} </span></div>
+          <div class="yellow font-12">亮点:{{item.brightSpot}} 里程:{{item.mileage}}</div>
+          <div class="font-gray">{{item.introduce}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</template>
+<!--{-->
+<!--"destination": "武侯祠",-->
+<!--"brightSpot": "参观成都著名景点武侯祠",-->
+<!--"id": "g2455g29f7uj8f1d13d2ff8a4b7b015987",-->
+<!--"day": "1",-->
+<!--"mileage": 17-->
+<!--},-->
+
+<script>
+
+  export default {
+    name: 'TimeLineRoad',
+    props: {
+      itemList: {
+        type: Array
+      }
+
+//    methods: {
+//      cancel () {
+//        this.$emit('dialog', {flag: false})
+//      },
+//      sure () {
+//        this.$emit('dialog', {flag: true})
+//      }
+//    }
+    }
+  }
+
+
+</script>
+
+<style lang="less"  type="text/less" scoped>
+  @import "../style/main.less";
+  .font-gray{
+    .px2rem(font-size,15);
+  }
+  .timeline-line{
+
+    border-left:2px solid #e5e5e5;
+    display: block;
+
+    margin-left: 2.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+
+  }
+
+  .timeline-icon{
+    position: absolute;
+    left: 0;
+    /*border-radius:50%;*/
+    .px2rem(height, 40);
+    .px2rem(width, 40);
+    .px2rem(line-height, 40);
+    .px2rem(margin-left, 20);
+    .px2rem(font-size, 36);
+    color:#999;
+
+    background-color: #fff;
+  }
+
+
+  .timeline-post {
+    margin: 0;
+    width: 100%;
+    border: 0 none;
+    box-sizing: border-box;
+    .timeline-content {
+      /*background: #fff;*/
+      position: relative;
+
+      /*-webkit-transition: all .4s;*/
+      /*-moz-transition: all .4s;*/
+      /*transition: all .4s;*/
+
+
+      .px2rem(margin-left, 30);
+      .px2rem(margin-right, 20);
+      .px2rem(margin-top, 20);
+    }
+
+  }
+
+</style>
+
+

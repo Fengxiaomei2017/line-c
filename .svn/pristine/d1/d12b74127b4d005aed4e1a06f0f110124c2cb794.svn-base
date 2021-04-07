@@ -1,0 +1,663 @@
+<template>
+  <div>
+    <!--<mt-header fixed title="线路详情">-->
+      <!--<router-link to="/list" @click="goBack" slot="left">-->
+        <!--<mt-button icon="back"></mt-button>-->
+      <!--</router-link>-->
+      <!--<mt-button icon="more" slot="right"></mt-button>-->
+    <!--</mt-header>-->
+    <header class="mint-header is-fixed">
+      <div class="mint-header-button is-left">
+        <div    class="">
+          <button class="mint-button mint-button--default mint-button--normal" @click="goBack">
+            <span class="mint-button-icon"><i class="mintui mintui-back"></i></span>
+            <label class="mint-button-text"></label>
+          </button>
+        </div>
+      </div>
+      <h1 class="mint-header-title" v-show="defaultMsg">线路详情</h1>
+      <div class="scroll-box" v-show="daysMsg">
+        <ul class="all-days">
+          <li class="every-day all-day-text">全部</li>
+          <li class="every-day"
+              v-if="days > 0"
+              v-show="daysMsg"
+              v-for="(item,indexDay) in days"
+              @click="_clickDay(indexDay)">D{{item}}</li>
+        </ul>
+      </div>
+      <div class="mint-header-button is-right">
+        <!--<a data-v-c1010688="" href="#/my-orders" class=""><i data-v-c1010688="" class="iconfont icon-dingdan"></i></a>-->
+      </div>
+    </header>
+    <div class="swipe">
+      <mt-swipe :auto="4000">
+        <mt-swipe-item v-for="img in this.product.imgList">
+          <img class="card-img-top" :src="img">
+        </mt-swipe-item>
+      </mt-swipe>
+    </div>
+    <div class="content-spe">
+      <div class="content-cell mt-0 cell-1">
+        <div class="upImg">
+          <p> {{product.productName}}</p>
+          <p>
+            <span class="tag" v-for="item in product.label">{{item}}</span>
+          </p>
+          <p>
+            <span class="text-danger"><b class="font-20">{{product.productScore}}</b><span class="font-12">分</span>  非常值得去</span>
+          </p>
+          <div class="price yellow"><span>￥</span>
+            <span class="price-num font-weight-bold">{{product.minSellPrice}}</span><span> 起</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-cell">
+        <div class="cell-title">线路亮点</div>
+        <div class="cell-body font-12">
+          <span class="display-4 font-gray">“</span>看色达盛景，观礼天葬，转绕坛城，听法闻法，拍摄雪景下的色达全景看色达盛景，观礼天葬，转绕坛城，听法闻法，拍摄雪景下的色达全景
+          <footer class="blockquote-footer text-right font-gray">成都ABCD俱乐部 推荐<span class="display-4 font-gray">”</span>
+          </footer>
+        </div>
+      </div>
+      <div class="content-cell">
+        <div class="cell-title">行程点评</div>
+
+        <div class="cell-body font-12">
+          姑娘好饭量
+
+          2018年 1月 17日出游
+
+          <p class="text-right">
+            <span class="text-danger"><b class="font-20">4.7</b><span class="font-12">分</span></span>
+          </p>
+          <p class="text-right">
+            <span class="text-danger">非常值得去</span>
+          </p>
+
+          看色达盛景，观礼天葬，转绕坛城，听法闻法，拍摄雪景下的色达全景
+        </div>
+      </div>
+      <div class="content-cell p-0">
+        <tab-anchor :tab-list="tablist" :selected="selected"></tab-anchor>
+      </div>
+      <div class="content-cell mt-0" id="cell1">
+        <img class="tese" :src="tese">
+      </div>
+      <div class="content-cell" id="cell2">
+        <div class="cell-title">行程介绍</div>
+        <div class="cell-body">
+          <div>
+            <label class=" "><span class="tag font-16">出发</span></label>
+            <label class="">{{product.startAddress}}</label>
+          </div>
+          <div>
+            <label class="  "><span class="tag font-16">行程</span></label>
+            <label class="">{{product.days}}天</label>
+          </div>
+          <div>
+            <label class=""><span class="tag font-16">途径</span></label>
+            <label class="">{{product.destination}}</label>
+          </div>
+          <div class="time-line-road">
+            <TimeLineRoad :item-list="product.singlePlan"></TimeLineRoad>
+          </div>
+        </div>
+      </div>
+      <div class="content-cell" id="cell3">
+        <div class="cell-title">
+          <h5>费用说明</h5>
+          <div class="attr-outbox">
+            <p v-for="item in attributeList"
+               v-if="item.attrId === incode_cost || item.attrId === noincode_cost"
+               class="explain">
+              <span class="cost-title">{{item.name}}:</span>
+              <span class="cost-content">{{item.content}}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="content-cell" id="cell4">
+        <div class="cell-title">
+          <h5>预订须知</h5>
+          <div class="attr-outbox">
+            <p v-for="item in attributeList"
+               v-if="item.attrId === must_reserve"
+               class="explain">
+              <span class="cost-title">{{item.name}}:</span>
+              <span class="cost-content">{{item.content}}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="black-bottom"></div>
+    </div>
+    <div class="fixed-bottom">
+      <div class="fixed-btn" ref="fixedBtn">
+        <i class="up-map" v-show="upMap" @click="_upMap"></i>
+        <i class="show-map" v-show="showMap" @click="_showMap"></i>
+        <i class="hide-map" v-show="hideMap" @click="_hideMap"></i>
+        <div
+          class="map"
+          v-if="markLine.length > 0"
+          v-show="isMap">
+          <webMap
+            :markLine="markLine"
+            :markContent="markContent"
+            :day="day"></webMap>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="bg-white total ask" @click="showPhoneNum(true)">咨询</div>
+        <div class="bg-white total" @click="showShare(true)">分享</div>
+        <div class="next-step" @click="book">预订</div>
+      </div>
+    </div>
+    <mt-popup
+      v-model="popupVisibleAsk"
+      position="bottom" class="popup-ask">
+      <div>
+        电话
+        <a href="tel:028-888888">028-888888</a>
+      </div>
+      <div @click="showPhoneNum(false)">
+        取消
+      </div>
+
+    </mt-popup>
+    <mt-popup
+      v-model="popupVisibleShare"
+      position="bottom" class="popup-ask share">
+      <div class="datasetconfig" data-title="分享标题"></div>
+
+    </mt-popup>
+  </div>
+</template>
+
+<script>
+const INCODE_COST = 'kfdij932g3c6547ce80f96b526f347a20'
+const NOINCODE_COST = 'kidoefh92fb64003a66d4f83b9664e2c'
+const MUST_RESERVE = 'ffff42t2g35g33c6547ce80f96b526f347a20'
+  import tese from '@/assets/tese.jpg'
+  import {getProductById} from '@/api/getData.js'
+  import {setStore} from '@/config/mUtils'
+  // import mixin from '@/config/mixin';
+
+  import Tab from '@/components/tab-anchor'
+  import TimeLine from '@/components/time-line-road'
+  import avatar from '@/assets/timg.jpg'
+  import Vue from 'vue'
+  // import sosh from 'sosh'
+  import {Popup} from 'mint-ui'
+  import webMap from '@/components/webMap.vue'
+
+  Vue.component(Popup.name, Popup)
+  Vue.component(TimeLine.name, TimeLine)
+  Vue.component(Tab.name, Tab)
+
+
+  export default {
+    name: 'List',
+    // mixins:[mixin],
+    data () {
+      return {
+        incode_cost: INCODE_COST,
+        noincode_cost: NOINCODE_COST,
+        must_reserve: MUST_RESERVE,
+        defaultMsg: true,
+        daysMsg: false,
+        isMap: true,
+        upMap: true,
+        showMap: false,
+        hideMap: true,
+        selected: 'theme',
+        // selected: '',
+        popupVisibleAsk: false,
+        popupVisibleShare: false,
+        productId: false,
+        days: 0,
+        singlePlan: [],
+        day: 0,
+        attributeList: [],
+        tablist: [{
+          tabID: 'theme',
+          tabText: '线路特色',
+          anchorID: 'cell1'
+        }, {
+          tabID: 'days',
+          tabText: '行程介绍',
+          anchorID: 'cell2'
+        }, {
+          tabID: 'way',
+          tabText: '费用说明',
+          anchorID: 'cell3'
+        }, {
+          tabID: 'sort',
+          tabText: '预订须知',
+          anchorID: 'cell4'
+        }
+        ],
+        five18Img: avatar,
+        tese: tese,
+        product: {},
+        markLine: [],
+        markContent: []
+        // itemlist: [
+        //   {
+        //     from: '成都',
+        //     to: '丹巴',
+        //     lightspot: '巴郎山、甲居藏寨  里程：338公里',
+        //     describe: "图片加文字",
+        //     dayNum: '1'
+        //   }, {
+        //     from: '成都',
+        //     to: '丹巴',
+        //     lightspot: '巴郎山、甲居藏寨  里程：338公里',
+        //     describe: "图片加文字",
+        //     dayNum: '2'
+        //   }, {
+        //     from: '成都',
+        //     to: '丹巴',
+        //     lightspot: '巴郎山、甲居藏寨  里程：338公里',
+        //     describe: "图片加文字",
+        //     dayNum: '3'
+        //   }
+        // ]
+      }
+    },
+    watch: {
+      day () {
+        this._sentMapData(this.singlePlan)
+      }
+    },
+    components: {
+      webMap
+    },
+    mounted () {
+      window.addEventListener('scroll', this.handleScroll)
+      // soshm('.datasetconfig', {
+      //   sites: ['weixin,', 'weibo', 'yixin', 'qzone']
+      // })
+    },
+    destroyed () {
+      window.removeEventListener('scroll', this.handleScroll)
+    },
+    methods: {
+      _clickDay (index) {
+        this.day = index + 1
+        // console.log(this.dayIndex)
+      },
+      _upMap () {
+        this.upMap = false
+        this.$refs.fixedBtn.className = 'fixed-btn big-map'
+      },
+      _hideMap () {
+        this.isMap = false
+        this.showMap = true
+        this.hideMap = false
+      },
+      _showMap () {
+        this.isMap = true
+        this.showMap = false
+        this.hideMap = true
+      },
+      goBack () {
+        this.$router.push('/list')
+      },
+      showPhoneNum(isShow) {
+        this.popupVisibleAsk = isShow
+      },
+      showShare(isShow) {
+        this.popupVisibleShare = isShow
+      },
+      book () {
+        setStore('BOOK-PRODUCT', {
+          productId: this.productId,
+          productName: this.product.productName,
+          img: this.product.imgList[0]
+        })
+        this.$router.push({
+          name: 'ChooseDate', params: {
+            id: this.productId,
+          }
+        })
+      },
+      handleScroll () {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+        if (scrollTop >= document.querySelector('#cell1').offsetTop && scrollTop < document.querySelector('#cell2').offsetTop) {
+          this.selected = 'theme'
+          this.defaultMsg = true
+          this.daysMsg = false
+        } else if (scrollTop >= document.querySelector('#cell2').offsetTop && scrollTop < document.querySelector('#cell3').offsetTop) {
+          this.selected = 'days'
+          this.defaultMsg = false
+          this.daysMsg = true
+        } else if (scrollTop >= document.querySelector('#cell3').offsetTop && scrollTop < document.querySelector('#cell4').offsetTop) {
+          this.selected = 'way'
+          this.defaultMsg = true
+          this.daysMsg = false
+        } else if (scrollTop >= document.querySelector('#cell4').offsetTop) {
+          this.selected = 'sort'
+          this.defaultMsg = true
+          this.daysMsg = false
+        }
+      },
+      _transfSinglePlan (singlePlan) {
+        if (singlePlan.length > 0) {
+          for (var i = 0; i < singlePlan.length; i++) {
+            if (singlePlan[i].hasOwnProperty('destination')) {
+              for (var j = 0; j < singlePlan[i].destination.length; j++) {
+                var inArr = []
+                inArr.push(singlePlan[i].destination[j].lng)
+                inArr.push(singlePlan[i].destination[j].lat)
+                singlePlan[i].destination[j]['lngLat'] = inArr
+              }
+            }
+          }
+          return singlePlan
+        }
+      },
+      _sentMapData (singlePlan) {
+        this.markLine = []
+        this.markContent = []
+        if (this.day === 0) {
+          // 默认发送的数据（即全部）
+          for (var i = 0; i < singlePlan.length; i++) {
+            if (singlePlan[i].destination) {
+              var allLngLatOld = singlePlan[i].destination[0].lngLat
+              var address = singlePlan[i].destination[0].address
+              var content = singlePlan[i].destination[0].content
+              var allLngLat = this.toNumber(allLngLatOld)
+              this.markLine.push(allLngLat)
+              this.markContent.push({address: address, content: content})
+            }
+          }
+        } else {
+          for (var j = 0; j < singlePlan[this.day - 1].destination.length; j++) {
+            var lngLatOld = singlePlan[this.day - 1].destination[j].lngLat
+            var address = singlePlan[this.day - 1].destination[j].address
+            var content = singlePlan[this.day - 1].destination[j].content
+            var lngLat = this.toNumber(lngLatOld)
+            this.markLine.push(lngLat)
+            this.markContent.push({address: address, content: content})
+          }
+        }
+        // console.log(this.markContent)
+      },
+      toNumber (allLngLat) {
+        var temp = []
+        for (var i = 0; i < allLngLat.length; i++) {
+          temp.push(Number(allLngLat[i]))
+        }
+        return temp
+      }
+    },
+    created () {
+      if (this.$route.params.id) {
+        this.productId = this.$route.params.id
+        getProductById(this.$route.params.id).then(res => {
+
+          if (res && res.data.state === 1) {
+          // this.roadList = res.data.data.list;
+            this.product = res.data.data
+            this.days = this.product.days
+            this.attributeList = this.product.attributeList
+            let singlePlanOld = this.product.singlePlan
+            // console.log(this.attributeList)
+            this.singlePlan = this._transfSinglePlan(singlePlanOld)
+            // console.log(this.singlePlan)
+            this._sentMapData(this.singlePlan)
+          }
+        })
+      }
+
+    }
+  }
+</script>
+
+<style lang="less" type="text/less" scoped>
+  @import "../style/main.less";
+  /*@import "../style/mixin.less";*/
+  .scroll-box {
+    .px2rem(height, 30);
+    .px2rem(margin-left, 30);
+    overflow-y: hidden;
+    .all-days {
+      width: 80vw;
+      .px2rem(height, 40);
+      /*.px2rem(margin-top, 10);*/
+      overflow-x:scroll;
+      .every-day {
+        display: inline-block;
+        .px2rem(width, 30);
+        .px2rem(height, 30);
+        .px2rem(line-height, 30);
+        .px2rem(margin-right, 10);
+        border-radius: 50%;
+      }
+      /*.all-day-text {
+        border: 1px solid #fff;
+        border-radius: 50%;
+      }*/
+    }
+  }
+  .tese {
+    width: 100%;
+  }
+
+  .black-bottom {
+    .px2rem(height, 60);
+  }
+
+  .swipe {
+    /*position: absolute;*/
+    /*top: 2.5rem;*/
+    .px2rem(height, 220);
+    width: 100%;
+    /*left: 0rem;*/
+    overflow: hidden;
+  }
+
+  .content-spe {
+    position: absolute;
+    /*top: 2.5rem;*/
+    /*bottom: 0;*/
+    /*width: 100%;*/
+    /*left: 0rem;*/
+
+    background-color: #eee;
+    .px2rem(top, 200);
+    .px2rem(border-top-right-radius, 15);
+    .px2rem(border-top-left-radius, 15);
+
+    .cell-1 {
+      .px2rem(border-top-right-radius, 15);
+      .px2rem(border-top-left-radius, 15);
+
+      .price {
+        margin-top: -2.5rem;
+        text-align: right;
+        .price-num {
+          .px2rem(font-size, 25);
+        }
+      }
+    }
+
+    .tag {
+      border: 1px solid @yellow;
+      color: @yellow;
+      /*padding: 0.1rem;*/
+      border-radius: 3px;
+      font-size: @font-12;
+      display: inline-block;
+      .px2rem(margin-right, 10);
+      .px2rem(padding-right, 4);
+      .px2rem(padding-left, 4);
+    }
+
+    .time-line-road {
+      border-top: 1px solid #eee;
+      .px2rem(border-top-width, 5);
+      .px2rem(margin-right, -16);
+      .px2rem(margin-left, -16);
+    }
+
+    .content-cell {
+      background-color: #fff;
+      min-height: 2rem;
+      .px2rem(margin-top, 5);
+      padding: 0.5rem;
+      .cell-title {
+        font-size: @font-18;
+        text-align: center;
+        .explain {
+          width: 90vw;
+          margin: 0 auto;
+          .cost-title {
+            display: inline-block;
+            .px2rem(width, 100);
+          }
+        }
+      }
+      .cell-body {
+        padding: 0 0.5rem;
+      }
+
+      p {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+      }
+
+    }
+
+    /*:nth-child(2) {*/
+    /*margin-top: -0.5rem;*/
+
+    /*.upImg {*/
+    /*!*border-radius: 5px 5px 0 0;*!*/
+    /*!*z-index: 1;*!*/
+    /*!*position: absolute;*!*/
+    /*}*/
+
+    /*}*/
+
+  }
+
+  .filter {
+    min-height: 130px;
+  }
+
+  .card {
+    padding: 0.5rem;
+    border: 0;
+    background: #eee;
+    border-radius: 0;
+    color: #fff;
+
+    h4 {
+      position: absolute;
+      left: 8px;
+      background: #e85811;
+      padding: 5px;
+    }
+
+    .black-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      position: absolute;
+      top: 65%;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      padding: 0.5rem;
+    }
+
+    .startingPoint {
+      position: absolute;
+      bottom: 0.5rem;
+    }
+
+  }
+
+/*  .fixed-middle {
+    position: absolute;
+  }*/
+  .fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    .fixed-btn {
+      i {
+        display: block;
+        position: absolute;
+        .px2rem(width, 60);
+        .px2rem(height, 60);
+        &.up-map {
+          .px2rem(top, -65);
+          .px2rem(right, 30);
+          .bg-image('../../static/img/up');
+        }
+        &.show-map {
+          .px2rem(top, -65);
+          .px2rem(right, 30);
+          .bg-image('../../static/img/show');
+          z-index: 1000;
+        }
+        &.hide-map {
+          .px2rem(top, 20);
+          .px2rem(right, 30);
+          .bg-image('../../static/img/hide');
+          z-index: 1000;
+        }
+      }
+      .map {
+        width: 100vw;
+        .px2rem(height, 120);
+      }
+    }
+    .big-map {
+      .map {
+        width: 100vw;
+        .px2rem(height, 300);
+      }
+    }
+    .bottom {
+      display: flex;
+      text-align: center;
+      .total {
+        width: 20%;
+        /*flex: 0 0 20%;*/
+        display: inline-block;
+        .px2rem(height, 60);
+        .px2rem(line-height, 60);
+      }
+      .ask {
+        border-right: 1px solid #e5e5e5;
+        /*margin-right: -1px;*/
+      }
+      .next-step {
+        width: 60%;
+        display: inline-block;
+        background: @orange;
+        color: white;
+        .px2rem(height, 60);
+        .px2rem(line-height, 60);
+      }
+    }
+  }
+
+  .popup-ask {
+    width: 100%;
+    .px2rem(height, 120);
+    .px2rem(line-height, 60);
+    font-size: @font-18;
+    text-align: center;
+    div {
+      border-top: 1px solid #e5e5e5;
+    }
+  }
+
+
+</style>
+
+

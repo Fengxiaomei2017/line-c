@@ -1,0 +1,149 @@
+<template>
+
+  <ul :class="linkClass()">
+    <li class="nav-item" v-for="(item,index) in tabList">
+      <a :tab="item.tabID"
+         :class="[selected === item.tabID?'them':'',
+         selected === item.tabID?'days':'',
+         selected === item.tabID?'way':'',
+         selected === item.tabID?'sort':'']"
+         class=""
+         @click="goAnchor($event,'#'+item.anchorID,index)"
+         href="javascript:void(0)">{{item.tabText}}</a>
+    </li>
+  </ul>
+</template>
+
+<script>
+
+  export default {
+    name: 'tab-anchor',
+    props: {
+      tabList: {
+        type: Array
+      },
+      selected: {
+        type: String
+      },
+      // methods: {
+      //   linkClass(idx) {
+      //     if (this.selected === idx) {
+      //       return ['nav-link', 'dropdown-toggle', 'active'];
+      //       // return ['bg-primary', 'text-light']
+      //     } else {
+      //       return ['nav-link', 'dropdown-toggle', 'active'];
+      //       // return ['bg-light', 'text-info']
+      //     }
+      //   }
+      // }
+    },
+    data() {
+      return {
+        activeClick: false,
+        // currentName: this.selected,
+        tabFixed:false,
+        anchorTops:[]
+      }
+    },
+    // computed: {
+    //   classObject () {
+    //     return {
+    //       them: this.selected == 'them' ? true : false,
+    //       days: this.selected =='days' ? true : false,
+    //       way: this.selected == 'way' ? true : false,
+    //       sort: this.selected =='sort' ? true : false
+    //     }
+    //   }
+    // },
+    mounted () {
+      document.addEventListener('scroll', this.handleScroll)
+      // this.anchorTops =
+      //   document.querySelector('.nav-tab').childNodes.forEach(function (el) {
+      //     this.anchorTops.push();
+      //   })
+    },
+    destroyed () {
+      document.removeEventListener('scroll', this.handleScroll)
+    },
+    // watch: {
+    //   selected () {
+    //     console.log('接收到的' + this.selected)
+    //   }
+    // },
+    methods: {
+      goAnchor: function(event, selector, index) {
+        this.selected = this.tabList[index].tabID
+        document.documentElement.scrollTop = document.querySelector(selector).offsetTop;
+      },
+      linkClass () {
+        if (this.tabFixed) {
+          return ['nav' ,'nav-justified' ,'nav-tab','fixed-top']
+        } else {
+          return ['nav' ,'nav-justified' ,'nav-tab']
+        }
+      },
+      handleScroll () {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+        // console.log(scrollTop)
+        //判断滚动位置设置被选tab
+        //设置置顶
+        if (scrollTop > document.querySelector('.nav-tab').offsetTop) {
+          this.tabFixed = true
+        } else {
+          this.tabFixed = false
+        }
+      }
+    },
+  }
+
+
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+
+  @import "../style/main.less";
+
+  @border-w: 0.16rem;
+  .nav-tab {
+    .px2rem(height, 40);
+    .px2rem(top, 40);
+    /*position: absolute;*/
+    background-color: @white;
+    width: 100%;
+    a {
+      /*margin-bottom: -@border-w;*/
+      padding: 0.5rem 0;
+      font-size: @font-14;
+      border-bottom: @border-w solid @level;
+      color: @font-dark;
+      /*border-radius: 2px;*/
+      &.active {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.them {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.days {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.way {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.sort {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+    }
+    .dropdown-toggle::after {
+      margin-left: 0.5em;
+    }
+  }
+
+
+</style>
+
+

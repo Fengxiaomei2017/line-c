@@ -1,0 +1,39 @@
+<template>
+  <div id="app" class="rich_media">
+    <keep-alive>
+      <router-view v-if="$route.meta.keepAlive"></router-view>
+    </keep-alive>
+    <router-view v-if="!$route.meta.keepAlive"></router-view>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: 'App'
+  }
+</script>
+
+<style>
+  @import "style/font/iconfont.css";
+  /*@import "style/main.less";*/
+
+  #app {
+   /*color: @font-dark;*/
+    color: #4c4c4c;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .rich_media {
+      position: relative;
+    }
+  }
+
+  @media screen and (min-width: 1024px) {
+    .rich_media {
+      width: 740px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+</style>

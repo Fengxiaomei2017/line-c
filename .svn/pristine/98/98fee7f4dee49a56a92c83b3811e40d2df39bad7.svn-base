@@ -1,0 +1,94 @@
+<template>
+  <div class="input-group input-group-sm input-num">
+    <div class="input-group-prepend">
+      <button type="button" class="btn" @click="decrease">-</button>
+    </div>
+    <input class="form-control" v-model="currentValue" @change="changeCount(currentValue)" />
+    <div class="input-group-append">
+      <button type="button" class="btn"  @click="increase">+</button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'input-num',
+  // mounted () {
+  //   document.addEventListener('scroll', this.handleScroll);
+  //   // this.anchorTops =
+  //   //   document.querySelector('.nav-tab').childNodes.forEach(function (el) {
+  //   //     this.anchorTops.push();
+  //   //   })
+  // },
+  // destroyed () {
+  //   document.removeEventListener('scroll', this.handleScroll)
+  // },
+  props: {
+    max: {
+      type: Number,
+      default: Infinity
+    },
+    min: {
+      type: Number,
+      // default: -Infinity
+      default: 0
+    },
+    value: {
+      type: Number,
+      default: 0
+    }
+  },
+  data() {
+    return {
+      currentValue: this.value
+    }
+  },
+  methods: {
+    changeCount (olVal) {
+      var newVal = parseInt(olVal)
+      this.$emit('change', newVal)
+    },
+    increase () {
+      // if (this.disabled || this.maxDisabled) return
+      let value = this.value || 0
+      const newVal = ++value
+      if (newVal > this.max) return
+      this.setCurrentValue(newVal)
+    },
+    decrease () {
+      // if (this.disabled || this.minDisabled) return
+      let value = this.value || 0
+      const newVal = --value
+      if (newVal < this.min) return
+      this.setCurrentValue(newVal)
+    },
+    setCurrentValue (newVal) {
+      const oldVal = this.currentValue
+      if (newVal >= this.max) newVal = this.max
+      if (newVal <= this.min) newVal = this.min
+      if (oldVal === newVal) {
+        // this.$refs.input.setCurrentValue(this.currentValue)
+        return
+      }
+      this.$emit('change', newVal, oldVal)
+      this.$emit('input', newVal)
+      this.currentValue = newVal
+      // this.value = newVal;
+    }
+  }
+}
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+  .input-num{
+    .btn{
+      color:@blue;
+      border-radius: 0;
+    }
+    input{
+      text-align: center;
+      .px2rem(border-width,0.5);
+    }
+  }
+</style>

@@ -1,0 +1,104 @@
+<template>
+
+  <div>
+    <header class="mint-header is-fixed">
+      <div class="mint-header-button is-left"><a href="javascript:void(0)" @click="loginOut">{{loginMsg}}</a></div>
+      <h1 class="mint-header-title">首页</h1>
+      <div class="mint-header-button is-right">
+        <a href="#/my-orders" class=""><i
+          class="iconfont icon-dingdan"></i></a></div>
+    </header>
+    <div class="content">
+      <a fixed class="card img-fluid card518" href="#/home">
+        <img class="card-img-top" src="../assets/timg.jpg">
+        <div class="card-img-overlay text-center">
+          <h2>5.18专题</h2>
+        </div>
+      </a>
+
+      <div class="hotel-line">
+        <a class="card img-fluid" href="http://www.daxi51.com/hotel/#/">
+          <img class="card-img-top" :src="five18Img">
+          <div class="card-img-overlay text-center">
+            <h4>酒店</h4>
+          </div>
+        </a>
+        <a class="card img-fluid" href="#/list">
+          <img class="card-img-top" :src="five18Img">
+          <div class="card-img-overlay text-center">
+            <h4>线路</h4>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import avatar from '@/assets/timg.jpg'
+import {mapMutations} from 'vuex'
+import Vue from 'vue'
+import {MessageBox} from 'mint-ui'
+//  Vue.component(Header.name, Header);
+export default {
+  name: 'Home',
+  data () {
+    return {
+      user: '',
+      loginMsg: '',
+      five18Img: avatar
+    }
+  },
+  created () {
+    this.user = this.$store.state.lineUser
+    if (JSON.stringify(this.user) !== '{}') {
+      this.loginMsg = '退出登陆'
+    } else {
+      this.loginMsg = ''
+    }
+  },
+  methods: {
+    ...mapMutations([
+      'LOGIN_OUT'
+    ]),
+    loginOut () {
+      this.LOGIN_OUT()
+      MessageBox('提示', '成功退出')
+      this.loginMsg = ''
+    }
+  }
+}
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+
+  .content {
+    background-color: #fff !important;
+    h4, h2 {
+      color: @white;
+    }
+    .card518 {
+      .px2rem(height, 200);
+      overflow: hidden;
+
+      img {
+        object-fit: cover;
+      }
+    }
+
+    .hotel-line {
+      .px2rem(margin, 10);
+      img {
+        object-fit: cover;
+        .px2rem(height, 200);
+      }
+    }
+  }
+
+  /*.content {*/
+  /*margin-top: 2.5rem;*/
+  /*}*/
+
+</style>

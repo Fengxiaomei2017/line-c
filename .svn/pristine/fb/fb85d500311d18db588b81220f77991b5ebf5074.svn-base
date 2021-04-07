@@ -1,0 +1,324 @@
+<template>
+  <div class="popup-pay">
+    <ul class="p-payway-list" id="c_payment_index_selectpayment_ul">
+      <li>
+        确认支付 <span>订单编号{{orderNo}} </span>
+        <a class="float-right" @click="closePopup">X</a>
+      </li>
+      <li>￥{{orderMoney}}</li>
+      <li class=" ">
+        支付方式
+      </li>
+      <!-- <li id="c_payment_global_bankcard" class=" " @click="selectedPayWay('bankcard')">
+        <div class="icon"><i class="pay_2"></i></div>
+        <div class="item milh"><span class="name">储蓄卡</span></div>
+        <div class="ro">
+          <input class="mint-radio-input" type="radio" disabled="disabled" id="bankcard" value="bankcard"
+                 v-model="payWay">
+          <span class="mint-radio-core"></span>
+        </div>
+      </li> -->
+      <!-- <li id="c_payment_global_creditcard" class=" " @click="selectedPayWay('creditcard')">
+        <div class="icon"><i class="pay_1"></i></div>
+        <div class="item milh"><span class="name">信用卡</span></div>
+        <div class="ro">
+
+          <input class="mint-radio-input" type="radio" disabled="disabled" id="creditcard" value="creditcard"
+                 v-model="payWay">
+          <span class="mint-radio-core"></span>
+        </div>
+      </li> -->
+      <li id="c_payment_global_wechatscan" class=" " @click="selectedPayWay('wechatscan')">
+        <div class="icon"><i class="pay_3"></i></div>
+        <div class="item milh"><span class="name">微信支付</span></div>
+        <div class="ro">
+          <input class="mint-radio-input" type="radio" id="wechatscan" value="wechatscan" v-model="payWay">
+          <span class="mint-radio-core"></span>
+        </div>
+      </li>
+      <!-- <li id="c_payment_global_mobileali" class=" " @click="selectedPayWay('mobileali')">
+        <div class="icon"><i class="pay_4"></i></div>
+        <div class="item milh"><span class="name">支付宝</span></div>
+        <div class="ro">
+          <input class="mint-radio-input" type="radio" disabled="disabled" id="mobileali" value="mobileali"
+                 v-model="payWay">
+          <span class="mint-radio-core"></span>
+        </div>
+      </li> -->
+    </ul>
+    <div class="btn btn-yellow btn-lg" @click="pay">立即付款</div>
+  </div>
+</template>
+<script>
+import {payOrder, wxForward} from '@/api/getData'
+import {Indicator, MessageBox} from 'mint-ui'
+import {mapMutations} from 'vuex'
+export default {
+  name: 'PayCom',
+  props: {
+    orderNo: {
+      type: String
+    },
+    stockGoodsId: {
+      type: String
+    },
+    stockGoodsName: {
+      type: String
+    },
+    adult: [Number, String],
+    child: [Number, String],
+    orderMoney: [Number, String],
+    day: {
+      type: String
+    }
+  },
+  data () {
+    return {
+      payWay: 'wechatscan',
+      payInfo: {
+        timeStamp: '',
+        appId: '',
+        nonceStr: '',
+        package: '',
+        signType: '',
+        paySign: ''
+      }
+    }
+  },
+  methods: {
+    ...mapMutations([
+      'PAY_FINISH'
+    ]),
+    closePopup () {
+      this.$emit('watchClose')
+    },
+    selectedPayWay (payWay) {
+      if ('mobileali-creditcard-bankcard'.indexOf(payWay) > 0) {
+        return
+      }
+      this.payWay = payWay
+    },
+    payThisOrder (id) {
+      payOrder(this.orderNo).then(
+        res => {
+          if (res.data.state === 1) {
+            MessageBox('提示', res.data.message)
+          } else {
+            MessageBox('错误', res.data.message)
+          }
+        }
+      )
+    },
+    goHome () {
+      // this.$router.push({name:'List'})
+      this.$router.push({path: '/order-details', query: {id: this.orderNo}})
+      this.$emit('watchOrder')
+    },
+    jsApiCall () {
+      let $this = this
+      WeixinJSBridge.invoke(        // eslint-disable-line
+        'getBrandWCPayRequest',
+        this.payInfo,
+        function (res) {
+          // alert(JSON.stringify(res))
+          if (res.err_msg === 'get_brand_wcpay_request:ok') {
+            $this.goHome()
+            // 支付成功
+            // title提示框的标题	String
+            // message提示框的内容	String
+            // showConfirmButton是否显示确认按钮	Boolean		true
+            // showCancelButton是否显示取消按钮	Boolean		false
+            // confirmButtonText
+            // MessageBox({
+            //   title: '提示',
+            //   message: '支付成功，可以在我的订单中查看',
+            //   showConfirmButton: true,
+            //   showCancelButton: false,
+            //   confirmButtonText: '知道了'
+            // }).then(action => {
+            //   //跳转到订单详情还是列表页
+            //   $this.goHome()
+            // })
+          } else if (res.err_msg === 'get_brand_wcpay_request:fail') {
+            MessageBox('提示', '支付失败')
+            // alert(JSON.stringify(res))
+            // $this.$router.push({path: 'result', query: {param: 'cancel'}})
+          } else {
+            // MessageBox('错误', JSON.stringify(res))
+            // alert(JSON.stringify(res))
+            // $this.$router.push({path: 'result', query: {param: 'error'}})
+          }
+        }
+      )
+    },
+    callpay () {
+      if (typeof WeixinJSBridge === 'undefined') {
+        if (document.addEventListener) {
+          document.addEventListener('WeixinJSBridgeReady', this.jsApiCall, false)
+        } else if (document.attachEvent) {
+          document.attachEvent('WeixinJSBridgeReady', this.jsApiCall)
+          document.attachEvent('onWeixinJSBridgeReady', this.jsApiCall)
+        }
+      } else {
+        this.jsApiCall()
+      }
+    },
+    pay () {
+      Indicator.open({
+        text: '验证中...',
+        spinnerType: 'fading-circle'
+      })
+      let ua = navigator.userAgent.toLowerCase()
+      let result = ua.match(/MicroMessenger/i) || ''
+      if (result) {
+        if (result.join(',') === 'micromessenger') {
+          //   wxJSAPIPay(2, this.order.orderNum, this.order.orderId, this.order.orderNum, this.order.orderMoney, this.userId).then(res => {
+          //     if (res.data.message === 'success') {
+          //       if (res.data.data) {
+          //         this.$vux.loading.hide()
+          //         let data = res.data.data
+          //         this.payInfo.timeStamp = data.timeStamp
+          //         this.payInfo.appId = data.jsapiAppid
+          //         this.payInfo.nonceStr = data.nonceStr
+          //         this.payInfo.package = data.jsapipackage
+          //         this.payInfo.signType = data.signType
+          //         this.payInfo.paySign = data.paySign
+          //         this.callpay()
+          //       }
+          //     } else {
+          //       this.$vux.loading.hide()
+          //       this.$vux.toast.show({
+          //         text: res.data.message,
+          //         type: 'warn',
+          //         position: 'bottom'
+          //       })
+          //     }
+          //   })
+          payOrder(this.orderNo).then(
+            res => {
+              if (res.data.state === 1) {
+                // MessageBox('提示', res.data.message)
+                // MessageBox('成功', JSON.stringify(res));
+                let data = res.data.data
+                this.payInfo.timeStamp = data.timeStamp
+                this.payInfo.appId = data.appId
+                this.payInfo.nonceStr = data.nonceStr
+                this.payInfo.package = data.package
+                this.payInfo.signType = data.signType
+                this.payInfo.paySign = data.paySign
+                // "timeStamp":"1521891225",
+                //   "package":"prepay_id=wx2018032419334741054fbd5d0393934824",
+                //   "paySign":"1F855B969AB0A55C2FDA4F5352013E49",
+                //   "appId":"wx93a4e8ff7be8feb9",
+                //   "signType":"MD5",
+                //   "nonceStr":"1521891225466
+                Indicator.close()
+                this.callpay()
+              } else {
+                MessageBox('错误', res.data.message)
+                // MessageBox('错误', JSON.stringify(res))
+              }
+            }
+          )
+        }
+      } else {
+        // 独立浏览器支付
+        wxForward(this.orderNo).then(res => {
+          Indicator.close()
+          let wxRedirectUrl = 'http://www.daxi51.com/#/order-confirmation?stockGoodsId=' + this.stockGoodsId + '&stockGoodsName=' + this.stockGoodsName + '&adult=' + this.adult + '&child=' + this.child + '&orderMoney=' + this.orderMoney + '&day=' + this.day
+          let encodeWxRedirectUrl = encodeURIComponent(wxRedirectUrl)
+          if (res.data.state === 1) {
+            let callbackPage = res.data.data + '&redirect_url=' + encodeWxRedirectUrl
+            window.location.href = callbackPage
+            let payFinish = {orderNo: this.orderNo}
+            this.PAY_FINISH(payFinish)
+          }
+        })
+      }
+    }
+  }
+}
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+
+  .popup-pay {
+    width: 100%;
+    /*.px2rem(height, 120);
+    .px2rem(line-height, 60);
+    font-size: @font-18;
+    text-align: center; */
+
+    .btn-yellow {
+      width: 100%;
+      border-radius: 0;
+    }
+  }
+
+  .p-payway-list {
+    padding: 0 0.5rem;
+    font-size: 0.85rem;
+    li {
+      position: relative;
+      padding: 0.6rem 0.6rem 0.6rem 0;
+      border-bottom: 1px solid #F2F5F8;
+      overflow: hidden;
+      min-height: 2rem;
+      display: table;
+      width: 100%;
+    }
+    .icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      text-align: center;
+      display: table-cell;
+      vertical-align: middle;
+    }
+    .ro {
+      display: table-cell;
+      width: 1.5rem;
+      height: 1.5rem;
+      text-align: center;
+      vertical-align: middle;
+      /*input{*/
+      /*display: none;*/
+      /*}*/
+      .mint-radio-input:checked + .mint-radio-core {
+        background-color: @blue;
+        border-color: @blue;
+      }
+    }
+    i {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      vertical-align: top;
+      background-size: 1rem 1rem;
+      background-repeat: no-repeat;
+      vertical-align: middle;
+      &.pay_2 {
+        background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE4LjEuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IuWbvuWxgl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgMjgzLjUgMTQxLjciIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDI4My41IDE0MS43IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHBhdGggZmlsbD0iI0ZGQzE1MiIgZD0iTTE1MS4zLTEzLjRINTAuMWMtMTEuMiwwLTIwLjMsOS4xLTIwLjMsMjAuM3Y0LjloMTQxLjdWNi45QzE3MS42LTQuNCwxNjIuNS0xMy40LDE1MS4zLTEzLjR6Ii8+CjxwYXRoIGZpbGw9IiNGRkMxNTIiIGQ9Ik0yOS45LDc0LjNjMCwxMS4yLDkuMSwyMC4zLDIwLjMsMjAuM2gxMDEuM2MxMS4yLDAsMjAuMy05LjEsMjAuMy0yMC4zVjI1LjJIMjkuOVY3NC4zeiBNMTI0LDM4LjJsMTIuMiwxNC41CglsMTIuMi0xNC41aDkuNmwtMTcsMjAuM2gxMC4zYzAuOSwwLDEuNywwLjcsMS43LDEuNnYzLjVjMCwwLjktMC44LDEuNi0xLjcsMS42aC00LjdoLTcuMXYzLjNoMTEuOGMwLjksMCwxLjcsMC43LDEuNywxLjZ2My41CgljMCwwLjktMC44LDEuNi0xLjcsMS42aC0xMS44djVjMCwwLjktMC43LDEuNy0xLjYsMS43aC0zLjVjLTAuOSwwLTEuNi0wLjgtMS42LTEuN3YtNUgxMjFjLTAuOSwwLTEuNy0wLjctMS43LTEuNnYtMy41CgljMC0wLjksMC44LTEuNiwxLjctMS42aDExLjh2LTMuM2gtNy4xaC00LjdjLTAuOSwwLTEuNy0wLjctMS43LTEuNnYtMy41YzAtMC45LDAuOC0xLjYsMS43LTEuNmgxMC4zbC0xNy0yMC4zSDEyNHoiLz4KPC9zdmc+Cg==);
+        background-size: 2rem 2rem;
+        background-position: -2.2rem -2.4rem;
+        margin-top: 0.3rem;
+      }
+      &.pay_1 {
+        background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE4LjEuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IuWbvuWxgl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSItNDEgLTMwLjMgMjAwIDIwMCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAtNDEgLTMwLjMgMjAwIDIwMCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxwYXRoIGZpbGw9IiMyREM3RkYiIGQ9Ik0xMzAuNC02LjVILTEyLjRDLTI4LjItNi41LTQxLDYuMy00MSwyMi4xVjI5aDIwMHYtNi44QzE1OSw2LjMsMTQ2LjItNi41LDEzMC40LTYuNXoiLz4KPHBhdGggZmlsbD0iIzJEQzdGRiIgZD0iTS00MSwxMTcuM2MwLDE1LjgsMTIuOCwyOC42LDI4LjYsMjguNmgxNDIuOWMxNS44LDAsMjguNi0xMi44LDI4LjYtMjguNlY0OEgtNDFWMTE3LjN6IE05My44LDkxLjFoNDcuNgoJbC0xOS4yLDMzLjNINzQuNUw5My44LDkxLjF6Ii8+Cjwvc3ZnPgo=);
+        margin-top: 0.05rem;
+      }
+      &.pay_3 {
+        background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgd2lkdGg9Ijg5cHgiIGhlaWdodD0iODFweCIgdmlld0JveD0iMCAwIDg5IDgxIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPCEtLSBHZW5lcmF0b3I6IFNrZXRjaCAzOS4xICgzMTcyMCkgLSBodHRwOi8vd3d3LmJvaGVtaWFuY29kaW5nLmNvbS9za2V0Y2ggLS0+CiAgICA8dGl0bGU+RmlsbCAxPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGRlZnM+PC9kZWZzPgogICAgPGcgaWQ9IlBhZ2UtMiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9ImlQaG9uZS02LUNvcHkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0zMC4wMDAwMDAsIC00NDcuMDAwMDAwKSIgZmlsbD0iIzNDQUYzMyI+CiAgICAgICAgICAgIDxnIGlkPSLlpITnkIbkuK0iPgogICAgICAgICAgICAgICAgPGcgaWQ9IuihqOWNleWGheWuuSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsIDEyOC4wMDAwMDApIj4KICAgICAgICAgICAgICAgICAgICA8ZyBpZD0iUGFnZS0xIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwMDAwMCwgMjc2LjAwMDAwMCkiPgogICAgICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNjEuMTI3MzgyMiw5NS4wMzg3Nzg0IEM2MC40MTUwNDUsOTUuNDcwMDQ4NiA1OS40NzkxNDM1LDk1LjE4MzI2NDkgNTkuMTI2MjYyNyw5NC40MjU4MDU0IEw0OS43NTYyODg3LDczLjgwMTQ1NDEgQzQ5LjQ4MDEyMTEsNzMuMTc5NzI0MyA0OS42ODYxNTA5LDcyLjQzOTc3ODQgNTAuMjUzODI4OCw3Mi4wNjU0MjcgQzUwLjcyNTA2NzMsNzEuNzU4OTQwNSA1MS4zMjc4MTQyLDcxLjc0Nzk5NDYgNTEuNzgzNzEsNzIuMDU2NjcwMyBMNjMuMjA5NTk4Nyw3OS40ODg5Njc2IEM2My42MTcyNzQ3LDc5Ljc0OTQ4MTEgNjQuMTI3OTY1Nyw3OS43ODY2OTczIDY0LjU1OTc1MTYsNzkuNTg1MjkxOSBMMTEwLjA0MTkzNCw1OC4zNTg5MTM1IEMxMDEuOTUxOTc1LDQ5LjAzNTE1NjggODguOTg5NjI5OSw0Mi45OTk1NjIyIDc0LjM2ODA4Nyw0Mi45OTk1NjIyIEM0OS44NzQ2NDYzLDQzLjAwMzk0MDUgMjkuOTk5MzQyNSw1OS45NzQ1MzUxIDI5Ljk5OTM0MjUsODAuOTExOTQwNSBDMjkuOTk5MzQyNSw5My4yODMwNDg2IDM2Ljk0NzM2OTksMTA0LjI2ODQgNDcuNjgyODM5NSwxMTEuMTg4NDI3IEw0NC40MDYwODg0LDEyMS41MDM4ODYgQzQ0LjA2NjM1ODMsMTIyLjcwNzk0MSA0NS4zMTU2ODgyLDEyMy43NTIxODQgNDYuNDUxMDQ0MSwxMjMuMjA0ODg2IEw1Ny44NDYyNDc1LDExNi4wOTg3NzggQzYyLjk1NTM0OTEsMTE3Ljg1NDUwOCA2OC41MzEzMDU1LDExOC44MjIxMyA3NC4zNzkwNDYsMTE4LjgyMjEzIEM5OC44OTIyMTI5LDExOC44MjIxMyAxMTguNzU0MzY2LDEwMS44NTM3MjQgMTE4Ljc1NDM2Niw4MC45MTYzMTg5IEMxMTguNzYzMTMzLDc0LjQ5NTQyNyAxMTYuODkxMzMsNjguNDUzMjY0OSAxMTMuNTkyNjYxLDYzLjE1OTgwNTQgTDYxLjEyNzM4MjIsOTUuMDM4Nzc4NCBaIiBpZD0iRmlsbC0xIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=);
+      }
+      &.pay_3 {
+        background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgd2lkdGg9Ijg5cHgiIGhlaWdodD0iODFweCIgdmlld0JveD0iMCAwIDg5IDgxIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPCEtLSBHZW5lcmF0b3I6IFNrZXRjaCAzOS4xICgzMTcyMCkgLSBodHRwOi8vd3d3LmJvaGVtaWFuY29kaW5nLmNvbS9za2V0Y2ggLS0+CiAgICA8dGl0bGU+RmlsbCAxPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGRlZnM+PC9kZWZzPgogICAgPGcgaWQ9IlBhZ2UtMiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9ImlQaG9uZS02LUNvcHkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0zMC4wMDAwMDAsIC00NDcuMDAwMDAwKSIgZmlsbD0iIzNDQUYzMyI+CiAgICAgICAgICAgIDxnIGlkPSLlpITnkIbkuK0iPgogICAgICAgICAgICAgICAgPGcgaWQ9IuihqOWNleWGheWuuSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsIDEyOC4wMDAwMDApIj4KICAgICAgICAgICAgICAgICAgICA8ZyBpZD0iUGFnZS0xIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwMDAwMCwgMjc2LjAwMDAwMCkiPgogICAgICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNjEuMTI3MzgyMiw5NS4wMzg3Nzg0IEM2MC40MTUwNDUsOTUuNDcwMDQ4NiA1OS40NzkxNDM1LDk1LjE4MzI2NDkgNTkuMTI2MjYyNyw5NC40MjU4MDU0IEw0OS43NTYyODg3LDczLjgwMTQ1NDEgQzQ5LjQ4MDEyMTEsNzMuMTc5NzI0MyA0OS42ODYxNTA5LDcyLjQzOTc3ODQgNTAuMjUzODI4OCw3Mi4wNjU0MjcgQzUwLjcyNTA2NzMsNzEuNzU4OTQwNSA1MS4zMjc4MTQyLDcxLjc0Nzk5NDYgNTEuNzgzNzEsNzIuMDU2NjcwMyBMNjMuMjA5NTk4Nyw3OS40ODg5Njc2IEM2My42MTcyNzQ3LDc5Ljc0OTQ4MTEgNjQuMTI3OTY1Nyw3OS43ODY2OTczIDY0LjU1OTc1MTYsNzkuNTg1MjkxOSBMMTEwLjA0MTkzNCw1OC4zNTg5MTM1IEMxMDEuOTUxOTc1LDQ5LjAzNTE1NjggODguOTg5NjI5OSw0Mi45OTk1NjIyIDc0LjM2ODA4Nyw0Mi45OTk1NjIyIEM0OS44NzQ2NDYzLDQzLjAwMzk0MDUgMjkuOTk5MzQyNSw1OS45NzQ1MzUxIDI5Ljk5OTM0MjUsODAuOTExOTQwNSBDMjkuOTk5MzQyNSw5My4yODMwNDg2IDM2Ljk0NzM2OTksMTA0LjI2ODQgNDcuNjgyODM5NSwxMTEuMTg4NDI3IEw0NC40MDYwODg0LDEyMS41MDM4ODYgQzQ0LjA2NjM1ODMsMTIyLjcwNzk0MSA0NS4zMTU2ODgyLDEyMy43NTIxODQgNDYuNDUxMDQ0MSwxMjMuMjA0ODg2IEw1Ny44NDYyNDc1LDExNi4wOTg3NzggQzYyLjk1NTM0OTEsMTE3Ljg1NDUwOCA2OC41MzEzMDU1LDExOC44MjIxMyA3NC4zNzkwNDYsMTE4LjgyMjEzIEM5OC44OTIyMTI5LDExOC44MjIxMyAxMTguNzU0MzY2LDEwMS44NTM3MjQgMTE4Ljc1NDM2Niw4MC45MTYzMTg5IEMxMTguNzYzMTMzLDc0LjQ5NTQyNyAxMTYuODkxMzMsNjguNDUzMjY0OSAxMTMuNTkyNjYxLDYzLjE1OTgwNTQgTDYxLjEyNzM4MjIsOTUuMDM4Nzc4NCBaIiBpZD0iRmlsbC0xIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=);
+      }
+      &.pay_4 {
+        background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgd2lkdGg9IjQwcHgiIGhlaWdodD0iNDBweCIgdmlld0JveD0iMCAwIDQwIDQwIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPCEtLSBHZW5lcmF0b3I6IFNrZXRjaCAzOS4xICgzMTcyMCkgLSBodHRwOi8vd3d3LmJvaGVtaWFuY29kaW5nLmNvbS9za2V0Y2ggLS0+CiAgICA8dGl0bGU+5pSv5LuY5a6daWNvbjwvdGl0bGU+CiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4KICAgIDxkZWZzPjwvZGVmcz4KICAgIDxnIGlkPSJTeW1ib2xzIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8ZyBpZD0i5pSv5LuY5a6daWNvbiI+CiAgICAgICAgICAgIDxyZWN0IGlkPSJSZWN0YW5nbGUiIGZpbGwtb3BhY2l0eT0iMCIgZmlsbD0iI0Q4RDhEOCIgeD0iMCIgeT0iMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIj48L3JlY3Q+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0xMS4wNjQ3MTcsMzAuOTEwODM0OCBDNS4yMTkzMjAxOSwzMC45MTA4MzQ4IDQuMjk0MjYxNjEsMjcuMjIwNTY4OSA0LjYwNDMwODQ1LDI1LjY3ODAwNjUgQzQuOTExODE0MzIsMjQuMTQyODcxNSA2LjYwNDQ0MDM4LDIyLjE0MDI0NzUgOS44NTQ2MzAzNCwyMi4xNDAyNDc1IEMxMy41ODk4NTE4LDIyLjE0MDI0NzUgMTYuOTM1MDgzNywyMy4wOTUzMDkgMjAuOTUwMzAwMiwyNS4wNTA0MzY1IEMxOC4xMzAxMiwyOC43MjMxNTk5IDE0LjY2NDkyNTIsMzAuOTEwODM0OCAxMS4wNjQ3MTcsMzAuOTEwODM0OCBNMzkuOTkxNTI0OSwyNy4zNzMwNzU4IEwzOS45OTE1MjQ5LDcuNjc5MzYwMDIgQzM5Ljk5MTUyNDksMy40MzQwODgzIDM2LjU0NjI2NjksLTAuMDExMTIwODc5MSAzMi4yOTg1MDMxLC0wLjAxMTEyMDg3OTEgTDcuNjc5NDY0ODgsLTAuMDExMTIwODc5MSBDMy40MzQyNDIwMiwtMC4wMTExMjA4NzkxIC0wLjAxMTAxNjAyNjgsMy40MzQwODgzIC0wLjAxMTAxNjAyNjgsNy42NzkzNjAwMiBMLTAuMDExMDE2MDI2OCwzMi4yOTgzOTgyIEMtMC4wMTEwMTYwMjY4LDM2LjU0MzY2OTkgMy40MzE3MDEwNSwzOS45ODg4NzkxIDcuNjc5NDY0ODgsMzkuOTg4ODc5MSBMMzIuMjk4NTAzMSwzOS45ODg4NzkxIEMzNi4wODEyNjk5LDM5Ljk4ODg3OTEgMzkuMjI4OTQxNywzNy4yNTM3MjM2IDM5Ljg3MTUxMzEsMzMuNjU2MDA3NiBDMzcuODMxMzYxLDMyLjc3MzQxMjUgMjguOTkwNzk5MywyOC45NTU3MDczIDI0LjM4NTU0MSwyNi43NTgwNjQgQzIwLjg4MDMyNTksMzEuMDAzMzM1OCAxNy4yMTAwOTQ1LDMzLjU1MDk5NzIgMTEuNjc3MjM2NiwzMy41NTA5OTcyIEM2LjE0NDM3ODc2LDMzLjU1MDk5NzIgMi40NTE2Njk2MywzMC4xNDMyNjczIDIuODk0MTg4OCwyNS45NzMwMDMgQzMuMTg2NjkzMTksMjMuMjM1MzU1NCA1LjA2NDMyMTIsMTguNzYwMDI4NCAxMy4yMTk4NDc5LDE5LjUyNzU5NTkgQzE3LjUxNzYwMDQsMTkuOTMwMTQzNyAxOS40ODUyMzczLDIwLjczMjY5ODMgMjIuOTkwNDUyNCwyMS44OTAyNTU0IEMyMy44OTgwMTc0LDIwLjIyNzYzMjMgMjQuNjUwNTM0NSwxOC4zOTc1NDk3IDI1LjIyMzA4MjgsMTYuNDQ5ODk4NSBMOS42Nzk1OTY4MSwxNi40NDk4OTg1IEw5LjY3OTU5NjgxLDE0LjkwOTgyODIgTDE3LjM3MDA3NzcsMTQuOTA5ODI4MiBMMTcuMzcwMDc3NywxMi4xNDQ2MjA5IEw3Ljk4OTUxMTcxLDEyLjE0NDYyMDkgTDcuOTg5NTExNzEsMTAuNDQ5NTUxNSBMMTcuMzcwMDc3NywxMC40NDk1NTE1IEwxNy4zNzAwNzc3LDYuNDU5MzA0OTUgQzE3LjM3MDA3NzcsNi40NTkzMDQ5NSAxNy40NTUxMDI0LDUuODM0MjI3MDcgMTguMTQ1MTIxNSw1LjgzNDIyNzA3IEwyMS45OTAzODY0LDUuODM0MjI3MDcgTDIxLjk5MDM4NjQsMTAuNDQ5NTUxNSBMMzEuOTkwOTk3MiwxMC40NDk1NTE1IEwzMS45OTA5OTcyLDEyLjE0NDYyMDkgTDIxLjk5MDM4NjQsMTIuMTQ0NjIwOSBMMjEuOTkwMzg2NCwxNC45MDk4MjgyIEwzMC4xNDg0MDUyLDE0LjkwOTgyODIgQzI5LjM5ODMzMTMsMTcuOTYyNTA2OCAyOC4yNjA3NTk5LDIwLjc2NzY4NTUgMjYuODM1NjY4NCwyMy4yMTc4MTI5IEMyOS4yMDU4NTMxLDI0LjA3NTM4OTMgMzkuOTkxNTI0OSwyNy4zNzMwNzU4IDM5Ljk5MTUyNDksMjcuMzczMDc1OCIgaWQ9IkZpbGwtMSIgZmlsbD0iIzAwQThGMSI+PC9wYXRoPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+);
+        background-position: 0px 2px;
+        height: 1.1rem;
+      }
+    }
+  }
+
+</style>

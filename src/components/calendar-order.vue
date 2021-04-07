@@ -1,0 +1,340 @@
+<script src="../../../aoc.airport.website/app/scripts/views/flight/list.jsx"></script>
+<template>
+  <div>
+    <!-- 年份 月份 -->
+    <div>
+      <button type="button" class="btn btn-sm mr-2" :class="currentMonth===(today.getMonth()+n)?'btn-yellow':''" v-for="n in 3" @click="pickMonth(today.getFullYear(),today.getMonth()+n)">{{today.getMonth()+n>12?today.getFullYear()+1:today.getFullYear()}}-{{(today.getMonth()+n)%12}}</button>
+    </div>
+    <div class="row month d-none">
+        <!--点击会触发pickpre函数，重新刷新当前日期 @click(vue v-on:click缩写) -->
+        <div class="col-3 arrow" @click="pickPre(currentYear,currentMonth)">❮</div>
+        <div class="col-6 year-month" @click="pickYear(currentYear,currentMonth)">
+          <span class="choose-year">{{ currentYear }}年 </span><span class="choose-month">{{ currentMonth }}月</span>
+        </div>
+        <div class="col-3 arrow" @click="pickNext(currentYear,currentMonth)">❯</div>
+    </div>
+    <!-- 星期 -->
+    <ul class="weekdays">
+      <li>日</li>
+      <li>一</li>
+      <li>二</li>
+      <li>三</li>
+      <li>四</li>
+      <li>五</li>
+      <li>六</li>
+    </ul>
+    <!-- 日期 -->
+    <ul class="days">
+      <!-- v-for循环 每一次循环用<li>标签创建一天 -->
+      <li v-for="dayObject in days" :class="selectedDay===formatDate(dayObject.day,'YYYY-MM-DD')?'active':''" @click="chooseDay(dayObject.day)">
+        <!--本月-->
+        <!--如果不是本月  改变类名加灰色-->
+
+        <!--<span v-if="dayObject.day.getMonth()+1 != currentMonth" class="other-month">{{ dayObject.day.getDate() }}</span>-->
+
+        <!--如果是本月  还需要判断是不是这一天-->
+
+          <!--今天  同年同月同日-->
+                <span v-if="dayObject.day.getFullYear() == new Date().getFullYear() && dayObject.day.getMonth() == new Date().getMonth() && dayObject.day.getDate() == new Date().getDate()"
+                  >今天</span>
+                <span v-else :class="selectedSku.dateKeyInfo[formatDate(dayObject.day,'YYYY-MM-DD')]?'day-num':'other-month'">{{ dayObject.day.getDate() }}</span>
+
+
+        <!--显示剩余多少数量-->
+        <div v-if="selectedSku.dateKeyInfo[formatDate(dayObject.day,'YYYY-MM-DD')]">
+          <div class="price">￥{{selectedSku.dateKeyInfo[formatDate(dayObject.day,'YYYY-MM-DD')].adultSellPrice}}</div>
+          <!--<div class="price">儿童:￥{{selectedSku.dateKeyInfo[formatDate(dayObject.day,'YYYY-MM-DD')].childSellPrice}}/人</div>-->
+        </div>
+        <!---->
+
+      </li>
+    </ul>
+  </div>
+</template>
+
+
+<script>
+  import {formatDate} from '@/config/mUtils'
+  import moment from 'moment'
+
+  export default {
+    name: 'Calendar4Order',
+    props: {
+      selectedSku:{
+        type: Object,
+        default:{
+          dateKeyInfo:{}
+        }
+      }
+    },
+    data(){
+      return{
+        selectedDay:'',
+        currentDay: 1,
+        currentMonth: 1,
+        currentYear: 1970,
+        currentWeek: 1,
+        today:new Date(),
+        days: [],
+        leftobj: [    //存放剩余数量
+          {count: 1},
+          {count: 2},
+          {count: 3},
+          {count: 4},
+          {count: 5},
+        ],
+      }
+    },
+    methods: {
+      moment: function (date) {
+        return moment(date);
+      },
+      formatDate: function (date,format) {
+        return formatDate(date,format);
+      },
+      order: function (day) {  //预定函数
+        if (this.leftobj[day.index].count >= 1)
+          this.leftobj[day.index].count--;
+        else
+          alert('已经没有位置了')
+      },
+      initData: function (cur) {
+        var leftcount = 0; //存放剩余数量
+        var date;
+        var index = 0;   //控制显示预定的天数 ，比如下面设置只能预定三天的
+        //this.initleftcount(); 每次初始化更新数量
+        //有两种方案  一种是每次翻页 ajax获取数据初始化   http请求过多会导致资源浪费
+        // 一种是每次请求 ajax获取数据初始化    数据更新过慢会导致缺少实时性
+        //还可以setTimeout 定时请求更新数据  实现数据刷新（可能会更好）
+
+
+        if (cur) {
+          date = new Date(cur);
+        } else {
+          var now = new Date();
+          var d = new Date(this.dateFormat(now.getFullYear(), now.getMonth(), 1));
+          d.setDate(35);
+          date = new Date(this.dateFormat(d.getFullYear(), d.getMonth() + 1, 1));
+        }
+        this.currentDay = date.getDate();
+        this.currentYear = date.getFullYear();
+        this.currentMonth = date.getMonth() + 1;
+
+        this.currentWeek = date.getDay()+1; // 1...6,0
+        if (this.currentWeek == 0) {
+          this.currentWeek = 7;
+        }
+        var str = this.dateFormat(this.currentYear, this.currentMonth, this.currentDay);
+        this.days.length = 0;
+        // 今天是周日，放在第一行第7个位置，前面6个
+        //初始化本周
+        for (var i = this.currentWeek - 1; i >= 0; i--) {
+          var d = new Date(str);
+          d.setDate(d.getDate() - i);
+          var dayObject = {};
+          dayObject.day = d;
+          var now = new Date();
+          if (d.getDate() === (now.getDate()) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            dayObject.index = index++;//从今天开始显示供预定的数量
+          }
+          else if (index != 0 && index < 3){
+            dayObject.index = index++;//从今天开始3天内显示供预定的数量
+          }
+          this.days.push(dayObject);//将日期放入data 中的days数组 供页面渲染使用
+        }
+        //其他周
+        for (var i = 1; i <= 35 - this.currentWeek; i++) {
+          var d = new Date(str);
+          d.setDate(d.getDate() + i);
+          var dayObject = {};
+          dayObject.day = d;
+          var now = new Date();
+          if (d.getDate() === (now.getDate()) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            dayObject.index = index++;
+          }
+          else if (index != 0 && index < 3)
+            dayObject.index = index++;
+          this.days.push(dayObject);
+        }
+
+      },
+      pickMonth:function (year, month) {
+        year=month>12?year+1:year;
+        var d = new Date(this.dateFormat(year, month,1));
+        this.initData(this.dateFormat(d.getFullYear(), d.getMonth() + 1, 1));
+        // this.$emit('pickMonth')
+      },
+      chooseDay:function (day) {
+        // this.$emit('selectedDay',this.dateFormat(day.getFullYear(), day.getMonth() + 1, 1))
+        let day4str=this.formatDate(day,'YYYY-MM-DD');
+
+        if(this.selectedSku.dateKeyInfo[day4str]){
+          this.selectedDay = this.formatDate(day,'YYYY-MM-DD');
+          // this.$emit('selectedDay',this.selectedDay)
+          // console.log(this.selectedSku.dateKeyInfo)
+          this.$emit('selectedDay',this.selectedDay,this.selectedSku.dateKeyInfo[day4str].groupId)
+        }
+      },
+      pickPre: function (year, month) {
+        // setDate(0); 上月最后一天
+        // setDate(-1); 上月倒数第二天
+        // setDate(dx) 参数dx为 上月最后一天的前后dx天
+        var d = new Date(this.dateFormat(year, month, 1));
+        d.setDate(0);
+        this.initData(this.dateFormat(d.getFullYear(), d.getMonth() + 1, 1));
+      },
+      pickNext: function (year, month) {
+        var d = new Date(this.dateFormat(year, month, 1));
+        d.setDate(35);
+        this.initData(this.dateFormat(d.getFullYear(), d.getMonth() + 1, 1));
+      },
+      // pickYear: function (year, month) {
+      //   alert(year + "," + month);
+      // },
+
+      // 返回 类似 2016-01-02 格式的字符串
+      dateFormat: function (year, month, day) {
+        var y = year;
+        var m = month;
+        if (m < 10) m = "0" + m;
+        var d = day;
+        if (d < 10) d = "0" + d;
+        return y + "-" + m + "-" + d
+      },
+    },
+
+    created: function () {  //在vue初始化时调用
+      this.initData(null);
+    },
+  }
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+  @import "../style/main.less";
+  button{
+    color:@font-gray
+  }
+  .month {
+    /*width: 100%;*/
+    background: @yellow;
+    /*display: none;*/
+    text-align: center;
+    .px2rem(height,40);
+    .px2rem(line-height,40);
+    color:@white;
+  }
+  .btn-yellow {
+    color: #fff;
+    background-color: @yellow;
+    border-color: @yellow;
+  }
+
+  .month ul {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .year-month {
+    /*display: flex;*/
+    /*flex-direction: column;*/
+    /*align-items: center;*/
+    /*justify-content: space-around;*/
+  }
+
+  .year-month:hover {
+    background: rgba(150, 2, 12, 0.1);
+  }
+
+  .choose-year , .choose-month{
+    /*padding-left: 20px;*/
+    /*padding-right: 20px;*/
+    font-size: 1rem;
+    text-align: center;
+  }
+
+
+
+  .arrow {
+    /*padding: 30px;*/
+  }
+
+  .arrow:hover {
+    background: rgba(100, 2, 12, 0.1);
+  }
+
+  .month ul li {
+    color: white;
+    font-size: 1.5rem;
+    /*text-transform: uppercase;*/
+    /*letter-spacing: 3px;*/
+  }
+
+  .weekdays {
+    padding: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    border-bottom:0.5px solid @blue;
+    margin-bottom: 0.5rem;
+  }
+
+  .weekdays li {
+    display: inline-block;
+    width: 13.6%;
+    text-align: center;
+  }
+
+
+  .days {
+    padding: 0;
+    background: #FFFFFF;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    li {
+      list-style-type: none;
+      display: inline-block;
+      width: 14.2%;
+      text-align: center;
+      .px2rem(padding-bottom,14);
+      .px2rem(padding-top,14);
+      font-size: 1rem;
+      color: #000;
+      .other-month {
+        padding: 5px;
+        color: gainsboro;
+      }
+      .day-num{
+       /* margin-top:-0.4rem;
+        color:@yellow;
+        position: absolute;*/
+      }
+      .price{
+        color:@yellow;
+        font-size: @font-14;
+        margin-top:-0.4rem;
+        padding-right: 0.4rem;
+        position: absolute;
+        width: 14.2%;
+      }
+    }
+    .active{
+      background: @yellow;
+      color: #fff;
+      border-radius:0.3rem;
+      .price{
+        color:@white;
+      }
+      .day-num{
+        color:@white;
+      }
+    }
+  }
+
+
+
+
+</style>

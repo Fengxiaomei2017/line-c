@@ -1,0 +1,1054 @@
+<template>
+<div>
+  <transition name="load">
+    <div v-show="isload" class="load"></div>
+  </transition>
+  <transition name="load-to">
+    <div v-show="isContent">
+      <header class="mint-header is-fixed"
+              v-show="isHeader"
+              style="z-index: 998;">
+        <a class="mint-header-button is-left" @click="goBack">
+          <i class="mintui mintui-back"></i>
+        </a>
+        <span class="product-name font-15">{{product.productName}}</span>
+      </header>
+      <div class="swipe">
+        <Swipe :auto="4000"
+               :show-indicators="false">
+          <SwipeItem
+            v-for="(img,index) in product.imgList">
+            <img class="card-img-top"
+                 :src="img"
+                 @load="computedTop"/>
+            <span class="img-index">
+              {{index + 1}}/{{product.imgList.length}}
+              <span class="small-img">
+              </span>
+            </span>
+          </SwipeItem>
+        </Swipe>
+        <a class="img-go-back" @click="goBack"><i class="mintui mintui-back"></i></a>
+        <span class="start-address">{{product.startAddress}}出发</span>
+      </div>
+      <div class="content-spe" id="lineTitle">
+        <div class="content-cell mt-0 cell-1">
+          <div class="upImg">
+            <p class="productName">{{product.productName}}</p>
+            <p class="main-title">
+              <span class="tag" v-if="mainTitle">{{mainTitle.content[0]}}</span>
+              <span class="tag" v-for="item in product.label">{{item}}</span>
+            </p>
+            <p>
+              <span class="text-danger"
+                    v-if="product.productScore">
+                <b class="font-20">{{product.productScore}}</b>
+                <span class="font-12">分</span>
+                非常值得去
+              </span>
+              <span class="text-danger"
+                    v-else>
+                <b class="font-20">5</b>
+                <span class="font-12">分</span>
+                (新路线)
+              </span>
+            </p>
+            <div class="price yellow"><span>￥</span>
+              <span class="price-num font-weight-bold">{{product.minSellPrice}}</span><span>起</span>
+            </div>
+          </div>
+        </div>
+        <div class="content-cell"
+             v-if="lineRight">
+          <div class="text-center cell-title">线路亮点</div>
+          <div class="line-chara-box">
+            <div class="display-4 left-font-gray">“</div>
+            <p class="line-chara font-12"
+               v-html="lineRight.content">
+            </p>
+          </div>
+          <footer class="blockquote-footer text-right font-gray">{{product.sellerName}} 推荐
+          <span class="display-4 right-font-gray">”</span>
+          </footer>
+        </div>
+        <div v-if="evaluateList"
+             class="content-cell">
+          <div class="text-center cell-title">行程点评</div>
+          <div class="cell-body font-12">
+            <div class="comment-header">
+              <div class="user-info">
+                <img class="head-img"
+                     :src="evaluateList.headImg"
+                     alt="头像">
+                <span class="user-name">
+                  <span class="line-one font-15">{{evaluateList.nickname}}</span>
+                  <span class="line-two font-gray">{{evaluateList.tripTime | formateDate}}出游</span>
+                </span>
+              </div>
+              <div class="comment-score">
+                <span class="line-one text-danger">
+                  <b class="font-20">{{evaluateList.score}}</b>
+                  <span class="font-12">分</span>
+                </span>
+                <span class="text-danger">非常值得去</span>
+              </div>
+            </div>
+            <div class="comment-content">
+              {{evaluateList.content}}
+              <div class="img-list">
+                <img class="comment-img"
+                     v-for="item in evaluateImages"
+                     :src="item">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="content-cell p-0"
+             id="tabjs">
+          <Tab
+            :tabOffset="tabOffset"
+            :parentOffset="parentOffset"
+            :tab-list="tablist"
+            :selected="selected"></Tab>
+        </div>
+        <div class="content-cell mt-0" id="cell1">
+          <div class="cell-body font-14"
+               v-if="lineDetail">
+               <div class="text-center cell-title">线路特色</div>
+               <div v-html="lineDetail.content"></div>
+          </div>
+        </div>
+        <div class="content-cell" id="cell2">
+          <div class="text-center cell-title">行程介绍</div>
+          <div class="cell-body font-14">
+            <div>
+              <label class=""><span class="tag font-16">出发</span></label>
+              <label class="">{{product.startAddress}}</label>
+            </div>
+            <div>
+              <label class=""><span class="tag font-16">行程</span></label>
+              <label class="">{{product.days}}天</label>
+            </div>
+            <div>
+              <label class=""><span class="tag font-16">途径</span></label>
+              <!-- <label class="">{{product.destination}}</label> -->
+              <lineRoad style="vertical-align: text-top;display: inline-block;"
+                        :lineList="destinationList"></lineRoad>
+            </div>
+            <div class="time-line-road" v-if="product.singlePlan">
+              <TimeLine :item-list="product.singlePlan"></TimeLine>
+            </div>
+          </div>
+        </div>
+        <div class="content-cell" id="cell3">
+          <div class="cell-title extra-title yellow">费用说明</div>
+          <div class="cell-body">
+            <div v-if="incodeCost" class="incode-cost">
+              <div class="incode-title font-15">{{incodeCost.name}}</div>
+              <p class="extra-content font-12 font-gray" v-html="incodeCost.content"></p>
+            </div>
+            <div v-if="noincodeCost" class="incode-cost">
+              <div class="incode-title font-15">{{noincodeCost.name}}</div>
+              <p class="extra-content font-12 font-gray" v-html="noincodeCost.content"></p>
+            </div>
+          </div>
+        </div>
+        <div class="content-cell" id="cell4">
+          <div class="cell-title extra-title yellow">预订须知</div>
+          <div class="cell-body font-12">
+            <p v-if="mustReserve"
+               class="extra-content font-gray"
+               v-html="mustReserve.content">
+            </p>
+          </div>
+        </div>
+        <div class="content-cell">
+          <div class="cell-title extra-title yellow">声明</div>
+          <div class="cell-body font-12">
+            <p class="extra-content font-gray">
+              请您在预定是务必提供准确、完善的信息（姓名、性别、证件号码、国籍、联系方式、是否成人或儿童等），以免产生预定错误，影响出行。如因客人提供错误个人信息而造成损失，应由客人自行承担因此产生的全部损失。
+            </p>
+          </div>
+          <div class="black-bottom"></div>
+        </div>
+      </div>
+      <div class="fixed-bottom">
+        <div class="fixed-btn">
+          <transition name="front-icon">
+            <span class="show-map"
+                  v-show="mapText"
+                  @click="_showMap">地图</span>
+            <!-- <span
+               class="show-map"
+               v-show="mapText"
+               @click="_mapIcon">地图</span> -->
+          </transition>
+          <transition name="back-icon">
+            <span class="show-map show-map-icon"
+                  v-show="showMap"
+                  @click="_showMap"></span>
+          </transition>
+          <transition name="slide">
+            <div
+              class="map"
+              v-if="markLine.length > 0"
+              v-show="isMap">
+              <header class="mint-header is-fixed"
+                style="z-index: 10000;">
+                  <a class="mint-header-button is-left" @click="_hideMap">
+                    <i class="mintui mintui-back"></i>
+                  </a>
+                  <div class="scroll-box">
+                    <ul class="all-days" v-if="product.planMode === 'detail'">
+                      <li
+                        class="every-day all-day-text"
+                        v-if="allLine.length"
+                        @click="_clickDay(-1)">全部</li>
+                      <li class="every-day"
+                          v-for="(item,indexDay) in days"
+                          v-if="product.singlePlan[indexDay].destination.length"
+                          @click="_clickDay(indexDay)">
+                          <a href="javascript:">D{{item}}</a>
+                      </li>
+                    </ul>
+                    <span v-else
+                          class="mint-header">
+                      地图模式
+                    </span>
+                  </div>
+                </header>
+              <webMap
+                :markLine="markLine"
+                :markContent="markContent"></webMap>
+            </div>
+          </transition>
+        </div>
+        <div class="bottom">
+          <div class="bg-white ask" @click="showPhoneNum(true)">
+            <img src="static/img/phone.png" class="phone-img">
+            咨询
+          </div>
+          <!-- <div class="bg-white total" @click="showShare(true)">分享</div> -->
+          <div
+            class="next-step"
+            @click="book">低至￥
+            <span class="price-num font-weight-bold">{{product.minSellPrice}}</span>
+            <span class="font-20">去预订</span>
+          </div>
+        </div>
+      </div>
+      <Popup
+        v-model="popupVisibleAsk"
+        position="bottom"
+        class="popup-ask">
+        <div>
+          电话
+          <a href="tel:028-888888">028-888888</a>
+        </div>
+        <div @click="showPhoneNum(false)">
+          取消
+        </div>
+
+      </Popup>
+      <!-- <Popup
+        v-model="popupVisibleShare"
+        position="bottom" class="popup-ask share">
+        <div class="datasetconfig" data-title="分享标题"></div>
+      </Popup> -->
+    </div>
+  </transition>
+</div>
+</template>
+
+<script>
+const MAIN_TITLE = '61ec899abbb44e498b16bb4e88ceb2eb'
+const INCODE_COST = 'kfdij932g3c6547ce80f96b526f347a20'
+const NOINCODE_COST = 'kidoefh92fb64003a66d4f83b9664e2c'
+const MUST_RESERVE = 'ffff42t2g35g33c6547ce80f96b526f347a20'
+const LINE_DETAIL = 'jij2981dh193hdincq89hd193hd19jd1x9'
+const LINE_NIGHT = 'f3a55da014ed467abdfc57e8301d5496'
+import {getProductById} from '@/api/getData.js'
+import {setStore} from '@/config/mUtils'
+
+import { Swipe, SwipeItem } from 'mint-ui'
+import { Popup } from 'mint-ui'
+import Tab from '@/components/tab-anchor'
+import TimeLine from '@/components/time-line-road'
+import webMap from '@/components/webMap.vue'
+import lineRoad from '@/components/line-road'
+// import Vue from 'vue'
+// import sosh from 'sosh'
+// Vue.component(Popup.name, Popup)
+// Vue.component(TimeLine.name, TimeLine)
+// Vue.component(Tab.name, Tab)
+// Vue.component(lineRoad.name, lineRoad)
+export default {
+  name: 'List',
+  // mixins:[mixin],
+  components: {
+    Swipe,
+    SwipeItem,
+    Popup,
+    Tab,
+    TimeLine,
+    webMap,
+    lineRoad
+  },
+  data () {
+    return {
+      isload: true,
+      isContent: false,
+      main_title: MAIN_TITLE,
+      incode_cost: INCODE_COST,
+      noincode_cost: NOINCODE_COST,
+      must_reserve: MUST_RESERVE,
+      line_detail: LINE_DETAIL,
+      line_night: LINE_NIGHT,
+      mainTitle: '',
+      lineRight: '',
+      lineDetail: '',
+      incodeCost: '',
+      noincodeCost: '',
+      mustReserve: '',
+      isHeader: false,
+      mapText: true,
+      // mapIcon: false,
+      isMap: false,
+      showMap: false,
+      selected: 0,
+      popupVisibleAsk: false,
+      // popupVisibleShare: false,
+      productId: false,
+      days: 0,
+      singlePlan: [],
+      day: 0,
+      attributeList: [],
+      lineList: [],
+      destinationList: [],
+      tabOffset: 0,
+      parentOffset: 0,
+      tablist: [{
+        tabID: 'theme',
+        tabText: '线路特色',
+        anchorID: 'cell1'
+      }, {
+        tabID: 'days',
+        tabText: '行程介绍',
+        anchorID: 'cell2'
+      }, {
+        tabID: 'way',
+        tabText: '费用说明',
+        anchorID: 'cell3'
+      }, {
+        tabID: 'sort',
+        tabText: '预订须知',
+        anchorID: 'cell4'
+      }],
+      product: {},
+      markLine: [],
+      markContent: [],
+      evaluateList: '',
+      evaluateImages: [],
+      imgs: [],
+      allLine: []
+    }
+  },
+  filters: {
+    formateDate (value) {
+      value = value + ''
+      return value.substring(0, 4) + '年' + ' ' + value.substring(5, 7) + '月' + ' ' + value.substring(8, 10) + '日'
+    }
+  },
+  watch: {
+    day () {
+      this._sentMapData(this.singlePlan)
+    }
+  },
+  created () {
+    window.scrollTo(0, 0)
+    if (this.$route.params.id) {
+      this.productId = this.$route.params.id
+      this.getDetail()
+    }
+  },
+  mounted () {
+    this.$nextTick(() => {
+      this.isload = false
+      this.isContent = true
+      setTimeout(() => {
+        window.addEventListener('scroll', this.handleScroll)
+      }, 1000)
+    })
+    // soshm('.datasetconfig', {
+    //   sites: ['weixin,', 'weibo', 'yixin', 'qzone']
+    // })
+  },
+  destroyed () {
+    window.removeEventListener('scroll', this.handleScroll)
+  },
+  methods: {
+    computedTop () {
+      this.parentOffset = document.querySelector('#lineTitle').offsetTop - 40
+      this.tabOffset = this.parentOffset + document.querySelector('#tabjs').offsetTop
+    },
+    getDetail () {
+      getProductById(this.productId).then(res => {
+        if (res && res.data.state === 1) {
+          this.product = res.data.data
+          this.destinationList = this.product.destinationList
+          this.days = this.product.days
+          // console.log(this.product)
+          let attributeList = this.product.attributeList
+          this.mainTitle = this._getAttrEver(attributeList, this.main_title)
+          this.lineRight = this._getAttrEver(attributeList, this.line_night)
+          let lineDet = this._getAttrEver(attributeList, this.line_detail)
+          this.lineDetail = this._imgContent(lineDet)
+          this.incodeCost = this._getAttrEver(attributeList, this.incode_cost)
+          this.noincodeCost = this._getAttrEver(attributeList, this.noincode_cost)
+          this.mustReserve = this._getAttrEver(attributeList, this.must_reserve)
+          if (this.product.evaluateList.length > 0) {
+            this.evaluateList = this.product.evaluateList[0]
+            this.evaluateImages = this._filterImg(this.evaluateList.evaluateImages)
+          }
+          let singlePlanOld = this.product.singlePlan
+          let conciseDestOld = this.product.conciseDestination
+          if (singlePlanOld) {
+            this.singlePlan = this._transfSinglePlan(singlePlanOld)
+            this._sentMapData(this.singlePlan)
+          } else if (conciseDestOld) {
+            let conciseDestination = this._transfDestPlan(conciseDestOld)
+            this._sentMapData2(conciseDestination)
+          }
+        }
+      })
+    },
+    _mapIcon () {
+      // this.showMap = true
+      this.mapText = false
+      setTimeout(() => {
+        this.showMap = true
+      }, 2500)
+    },
+    _getAttrEver (arr, attrId) {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i].attrId === attrId) {
+          return arr[i]
+        }
+      }
+    },
+    _imgContent (lineDet) {
+      var newLineDet = {}
+      if (lineDet) {
+        newLineDet['name'] = lineDet.name
+        var content = lineDet.content.replace(/<p><img/g, '<p><img style="max-width: 95vw;"')
+        newLineDet['content'] = content
+        return newLineDet
+      }
+    },
+    _filterImg (element) {
+      return element.split(',')
+    },
+    _clickDay (index) {
+      this.day = index + 1
+    },
+    _hideMap () {
+      this.isMap = false
+      // this.showMap = true
+      // this.hideMap = false
+    },
+    _showMap () {
+      this.isMap = true
+      // this.showMap = false
+      // this.hideMap = true
+    },
+    goBack () {
+      // this.$router.push('/list')
+      this.$router.push('/newList')
+    },
+    showPhoneNum(isShow) {
+      this.popupVisibleAsk = isShow
+    },
+    // showShare(isShow) {
+    //   this.popupVisibleShare = isShow
+    // },
+    book () {
+      setStore('BOOK-PRODUCT', {
+        productId: this.productId,
+        productName: this.product.productName,
+        img: this.product.imgList[0],
+        sellerName: this.product.sellerName
+      })
+      this.$router.push({name:'ChooseDate', params: {id: this.productId}})
+    },
+    handleScroll () {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+      if (scrollTop >= this.parentOffset + 40) {
+        this.isHeader = true
+      } else {
+        this.isHeader = false
+      }
+      let parentOffset = this.parentOffset - 40
+      let themeOffset = parentOffset + document.querySelector('#cell1').offsetTop
+      let daysOffset = parentOffset + document.querySelector('#cell2').offsetTop
+      let wayOffset = parentOffset + document.querySelector('#cell3').offsetTop
+      let sortOffset = parentOffset + document.querySelector('#cell4').offsetTop
+      if (scrollTop >= themeOffset && scrollTop < daysOffset) {
+        this.selected = 0
+        this._mapIcon()
+      } else if (scrollTop >= daysOffset && scrollTop < wayOffset) {
+        this.selected = 1
+      } else if (scrollTop >= wayOffset && scrollTop < sortOffset) {
+        this.selected = 2
+      } else if (scrollTop >= sortOffset) {
+        this.selected = 3
+      }
+    },
+    _transfSinglePlan (singlePlan) {
+      if (singlePlan.length > 0) {
+        for (var i = 0; i < singlePlan.length; i++) {
+          if (singlePlan[i].hasOwnProperty('destination')) {
+            for (var j = 0; j < singlePlan[i].destination.length; j++) {
+              this.lineList.push(singlePlan[i].destination[j].address)
+              var inArr = []
+              inArr.push(singlePlan[i].destination[j].lng)
+              inArr.push(singlePlan[i].destination[j].lat)
+              singlePlan[i].destination[j]['lngLat'] = inArr
+            }
+          }
+        }
+        let newSinglePlan = singlePlan
+        return newSinglePlan
+      }
+    },
+    _transfDestPlan (arr) {
+      for (var i = 0; i < arr.length; i++) {
+        this.lineList.push(arr[i].address)
+        var inArr = []
+        inArr.push(arr[i].lng)
+        inArr.push(arr[i].lat)
+        arr[i]['lngLat'] = inArr
+      }
+      return arr
+    },
+    _sentMapData (newSinglePlan) {
+      this.markLine = []
+      this.markContent = []
+      if (this.day === 0) {
+        // 默认发送的数据（即全部）
+        // debugger;
+        for (var i = 0; i < newSinglePlan.length; i++) {
+          if (newSinglePlan[i].destination.length) {
+            var address = newSinglePlan[i].destination[0].address
+            var content = newSinglePlan[i].destination[0].content
+            var allLngLatOld = newSinglePlan[i].destination[0].lngLat
+            var allLngLat = this.toNumber(allLngLatOld)
+            this.markLine.push(allLngLat)
+            this.markContent.push({address: address, content: content})
+          }
+        }
+        if (this.markLine.length) {
+          this.allLine = this.markLine
+        }
+      } else {
+        let currentDay = this.day - 1
+        if (newSinglePlan[currentDay].destination.length) {
+          for (var j = 0; j < newSinglePlan[currentDay].destination.length; j++) {
+            var lngLatOld = newSinglePlan[currentDay].destination[j].lngLat
+            var address = newSinglePlan[currentDay].destination[j].address
+            var content = newSinglePlan[currentDay].destination[j].content
+            var lngLat = this.toNumber(lngLatOld)
+            this.markLine.push(lngLat)
+            this.markContent.push({address: address, content: content})
+          }
+        }
+      }
+      // console.log(this.markContent)
+    },
+    _sentMapData2 (arr) {
+      this.markLine = []
+      this.markContent = []
+      if (arr.length) {
+        for (var i = 0; i < arr.length; i++) {
+          var allLngLatOld = arr[i].lngLat
+          var address = arr[i].address
+          var content = arr[i].content
+          var allLngLat = this.toNumber(allLngLatOld)
+          this.markLine.push(allLngLat)
+          this.markContent.push({address: address, content: content})
+        }
+      }
+    },
+    toNumber (allLngLat) {
+      var temp = []
+      for (var i = 0; i < allLngLat.length; i++) {
+        temp.push(Number(allLngLat[i]))
+      }
+      return temp
+    }
+  }
+}
+</script>
+
+<style lang="less" type="text/less" scoped>
+  @import "../style/main.less";
+  .load {
+    width: 100vw;
+    height: 100vh;
+    background: url('../../static/img/lord.gif') no-repeat;
+    background-size: contain;
+    background-position:center;
+  }
+  .tag {
+    /*padding: 0.1rem;*/
+    display: inline-block;
+    .px2rem(height, 25);
+    .px2rem(line-height, 25);
+    .px2rem(margin-right, 10);
+    .px2rem(padding-right, 4);
+    .px2rem(padding-left, 4);
+    font-size: @font-15;
+    color: @yellow;
+    border: 1px solid @yellow;
+    border-radius: 3px;
+    margin-top: 0;
+  }
+  .text-danger {
+    .px2rem(font-size, 15);
+  }
+  .product-name {
+    float: right;
+    width: 90%;
+    /*.px2rem(height, 30);*/
+    margin-left: 5%;
+    overflow-x: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+  }
+  .price-num {
+    .px2rem(font-size, 24);
+  }
+  .scroll-box {
+    .px2rem(height, 40);
+    .px2rem(line-height, 40);
+    .px2rem(margin-left, 30);
+    overflow-y: hidden;
+    .all-days {
+      width: 80vw;
+      .px2rem(height, 40);
+      overflow-x:scroll;
+      .every-day {
+        display: inline-block;
+        .px2rem(width, 30);
+        .px2rem(height, 30);
+        .px2rem(line-height, 30);
+        .px2rem(margin-right, 10);
+        border-radius: 50%;
+        a {
+          color: #fff;
+        }
+      }
+      /*.all-day-text {
+        border: 1px solid #fff;
+        border-radius: 50%;
+      }*/
+    }
+  }
+  /*.tese {
+    width: 100%;
+  }*/
+
+  .black-bottom {
+    .px2rem(height, 60);
+  }
+
+  .swipe {
+    position: relative;
+    width: 100%;
+    .px2rem(height, 220);
+    font-size: @font-12;
+    color: #fff;
+    overflow: hidden;
+    img {
+      .px2rem(height, 220);
+      border-radius: 0;
+    }
+    .img-go-back {
+      position: absolute;
+      .px2rem(top, 8);
+      .px2rem(left, 10);
+      i {
+        font-size: @font-16;
+        font-weight: bold;
+      }
+    }
+    .start-address {
+      position: absolute;
+      .px2rem(bottom, 25);
+      .px2rem(left, 18);
+    }
+    .img-index {
+      position: absolute;
+      .px2rem(bottom, 25);
+      .px2rem(right, 18);
+      .small-img {
+        display: inline-block;
+        .px2rem(width, 15);
+        .px2rem(height, 11);
+        vertical-align: middle;
+        .bg-image('../../static/img/smallimg');
+        background-size: 100% 100%;
+      }
+    }
+  }
+
+  .content-spe {
+    position: absolute;
+    /*top: 2.5rem;*/
+    /*bottom: 0;*/
+    /*width: 100%;*/
+    /*left: 0rem;*/
+    background-color: #eee;
+    .px2rem(top, 200);
+    .px2rem(border-top-right-radius, 15);
+    .px2rem(border-top-left-radius, 15);
+    .cell-1 {
+      .px2rem(border-top-right-radius, 15);
+      .px2rem(border-top-left-radius, 15);
+      .price {
+        margin-top: -2.2rem;
+        text-align: right;
+      }
+    }
+
+    .time-line-road {
+      border-top: 1px solid #eee;
+      .px2rem(border-top-width, 5);
+      .px2rem(margin-right, -16);
+      .px2rem(margin-left, -16);
+    }
+
+    .content-cell {
+      background-color: #fff;
+      /*min-height: 2rem;*/
+      .px2rem(margin-top, 5);
+      padding: 0 0.5rem;
+      padding-bottom: 0.5rem;
+      .upImg {
+        width: 95vw;
+        .productName {
+          .px2rem(padding-top, 10);
+          .px2rem(padding-bottom, 6);
+          .px2rem(font-size, 15);
+          .px2rem(line-height, 25);
+        }
+        .main-title {
+          .px2rem(height, 25);
+          overflow-y: hidden;
+          .tag:first-child {
+            .px2rem(margin-right, 5);
+          }
+          .tag {
+            .px2rem(height, 18);
+            .px2rem(line-height, 18);
+            .px2rem(font-size, 10);
+          }
+        }
+      }
+      .cell-title {
+        .px2rem(height, 45);
+        .px2rem(line-height, 45);
+        font-size: @font-18;
+        text-align: left;
+        padding: 0 0.5rem;
+      }
+      /*.cost-info {
+        .px2rem(height, 35);
+      }*/
+      .extra-title {
+        .px2rem(height, 37);
+        .px2rem(line-height, 37);
+      }
+      .display-4 {
+        color: #e6e6e6;
+      }
+      .line-chara-box {
+        position: relative;
+        .px2rem(margin-top, 5);
+        .left-font-gray {
+          position: absolute;
+          top: 0;
+          .px2rem(top, -5);
+          .px2rem(margin-top, 20);
+          .px2rem(line-height, 0);
+        }
+        .line-chara {
+          padding: 0 0.5rem;
+          .px2rem(margin-left, 15);
+        }
+      }
+      .blockquote-footer {
+        .px2rem(padding-top, 5);
+        .right-font-gray {
+          display: inline-block;
+          vertical-align: text-top;
+          .px2rem(height, 30);
+          .px2rem(line-height, 30);
+        }
+      }
+      .cell-body {
+        padding: 0 0.5rem;
+        width: 95vw;
+        overflow-x: hidden;
+        /*font-size: @font-14;*/
+        /*text-align: left;*/
+        .comment-header {
+          width: 100%;
+          .px2rem(height, 60);
+          .user-info {
+            float: left;
+            .head-img {
+              display: inline-block;
+              .px2rem(width, 50);
+              .px2rem(height, 50);
+              .px2rem(margin-right, 5);
+              vertical-align: -50%;
+              background-color: #ffa912;
+              border-radius: 50%;
+            }
+            .user-name {
+              display: inline-block;
+              /*border: 1px solid red;*/
+            }
+          }
+          .comment-score {
+            float: right;
+            text-align: right;
+          }
+          .line-one {
+            display: block;
+            .px2rem(height, 30);
+            .px2rem(line-height, 30);
+          }
+        }
+        .comment-content {
+          .px2rem(margin-left, 50);
+          .img-list {
+            .px2rem(margin-top, 8);
+            .comment-img {
+              display: inline-block;
+              .px2rem(width, 85);
+              .px2rem(height, 80);
+              .px2rem(margin-right, 8);
+              background-color: #d2e4e4;
+            }
+          }
+        }
+        .incode-cost {
+          .px2rem(margin-bottom, 8);
+          .incode-title {
+            .px2rem(margin-bottom, 6);
+          }
+        }
+        .extra-content {
+          .px2rem(line-height, 20);
+          .px2rem(margin-bottom, 5);
+        }
+        /*.cost-explain {
+          display: inline-block;
+          vertical-align: text-top;
+        }*/
+      }
+      /*.line-detail {
+        width: 95vw;
+        overflow-x: hidden;
+      }*/
+      p {
+        margin: 0;
+      }
+    }
+  }
+
+  .filter {
+    min-height: 130px;
+  }
+
+  .card {
+    padding: 0.5rem;
+    border: 0;
+    background: #eee;
+    border-radius: 0;
+    color: #fff;
+
+    h4 {
+      position: absolute;
+      left: 8px;
+      background: #e85811;
+      padding: 5px;
+    }
+
+    .black-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      position: absolute;
+      top: 65%;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      padding: 0.5rem;
+    }
+
+    .startingPoint {
+      position: absolute;
+      bottom: 0.5rem;
+    }
+
+  }
+
+/*  .fixed-middle {
+    position: absolute;
+  }*/
+  .fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    /*box-shadow: #B8B6B6 0 0 8px;*/
+    border-top: 1px solid #e5e5e5;
+    .fixed-btn {
+      .show-map {
+        display: block;
+        position: absolute;
+        .px2rem(top, -60);
+        .px2rem(right, 30);
+        z-index: 1000;
+        .px2rem(width, 45);
+        .px2rem(height, 45);
+        .px2rem(line-height, 45);
+        color: #fff;
+        text-align: center;
+        background-color: #FFA912;
+        border-radius: 50%;
+        -webkit-box-shadow: #A19F9F 0 0 10px;
+        -moz-box-shadow: #A19F9F 0 0 10px;
+        box-shadow: #A19F9F 0 0 10px;
+        &.show-map-icon {
+          .bg-image('../../static/img/show');
+        }
+      }
+      .map {
+        width: 100vw;
+        height: 100vh;
+      }
+    }
+    .bottom {
+      display: flex;
+      text-align: center;
+      .ask {
+        width: 30%;
+        display: inline-block;
+        .px2rem(height, 50);
+        .px2rem(line-height, 50);
+        .px2rem(font-size, 12);
+        border-right: 1px solid #e5e5e5;
+        color: #919090;
+        .phone-img {
+         .px2rem(width, 25);
+         .px2rem(height, 25);
+         .px2rem(margin-right, 5);
+        }
+      }
+      .next-step {
+        width: 70%;
+        display: inline-block;
+        background: @orange;
+        color: white;
+        .px2rem(height, 50);
+        .px2rem(line-height, 50);
+        .px2rem(font-size, 15);
+      }
+    }
+  }
+
+/*  .popup-ask {
+    width: 100%;
+    .px2rem(height, 120);
+    .px2rem(line-height, 60);
+    font-size: @font-18;
+    text-align: center;
+    div {
+      border-top: 1px solid #e5e5e5;
+    }
+  }*/
+  .text-center {
+    text-align: center;
+  }
+  .is-fixed {
+    z-index: 10000;
+  }
+  .front-icon-leave-active,.front-icon-leave-to {
+    -webkit-animation: turn 3s infinite;
+    animation: turn 3s infinite;
+  }
+  .back-icon-enter-to {
+    /*transition: all 2.5s;
+    opacity: 0;*/
+    animation: back 1s infinite;
+  }
+  @-webkit-keyframes turn {
+    to {
+      -webkit-transform: rotateY(270deg);
+    }
+  }
+
+  @keyframes turn {
+    to {
+      transform: rotateY(270deg);
+    }
+  }
+
+  @-webkit-keyframes back {
+    to {
+      -webkit-transform: rotateY(20deg);
+    }
+  }
+
+  @keyframes back {
+    to {
+      transform: rotateY(20deg);
+    }
+  }
+  /*.back-icon-enter-active {
+    transition: all .6s ease;
+    animation: move .6s ease;
+  }*/
+  /*.back-icon-enter,.back-icon-leave-active{
+    transition: all .5s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+  }
+  .back-icon-enter, .back-icon-leave-to {
+    transform: translateX(30px);
+    opacity: 0;
+  }*/
+  /*.slide-fade-enter-active {
+    transition: all .6s ease;
+  }
+  .slide-fade-leave-active {
+    transition: all .5s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+  }
+  .slide-fade-enter, .slide-fade-leave-to {
+    transform: translateX(30px);
+    opacity: 0;
+  }*/
+  .slide-enter-active,.slide-leave-active {
+    transition:all 0.5s;
+  }
+  .slide-enter,.slide-leave-to {
+    // 整个元素从右到左滑入
+    transform: translate3d(100%, 0, 0);
+  }
+  .load-leave-to {
+    transition: all 1s cubic-bezier(1.0,0.5,0.8,1.0);
+    opacity: 0;
+  }
+  .load-to-enter-active {
+    transition: all 1s cubic-bezier(1.0,0.5,0.8,1.0);
+    opacity: 0;
+  }
+</style>

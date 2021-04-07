@@ -1,0 +1,291 @@
+@blue: #3797db;
+@indigo: #6610f2;
+@purple: #6f42c1;
+@pink: #e83e8c;
+@red: #dc3545;
+@orange: #eb4710;
+@yellow: #ffa912;
+@green: #28a745;
+@teal: #20c997;
+@cyan: #17a2b8;
+@white: #fff;
+@gray: #6c757d;
+@font-gray: #b2b2b2;
+@gray-dark: #343a40;
+@primary: #007bff;
+@secondary: #6c757d;
+@success: #28a745;
+@info: #17a2b8;
+@warning: #ffc107;
+@danger: #dc3545;
+@light: #f8f9fa;
+@dark: #343a40;
+@font-dark: #4c4c4c;
+@level: #f2f2f2;
+
+//@list: 'blue', 'indigo', 'purple';
+//
+//.color-loop (@i) when (@i > 0) {
+//  .extract(@list, @{i}) {
+//    color: ~"@{extract(@list, @{i})}";
+//  }
+//  .color-loop(@i - 1);
+//}
+//
+//.color-loop (length(@list));
+
+//消除默认样式
+button, select, textarea {
+  outline: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+input {
+  outline: none;
+}
+
+.blue {
+  color: @blue
+}
+
+.indigo {
+  color: @indigo
+}
+
+.purple {
+  color: @purple
+}
+
+.pink {
+  color: @pink
+}
+
+.orange {
+  color: @orange
+}
+
+.yellow {
+  color: @yellow
+}
+
+.white {
+  color: @white
+}
+.font-gray{
+  color:@font-gray
+}
+
+.text-left {
+  text-align: left;
+}
+//@purple: #6f42c1;
+//@pink: #e83e8c;
+//@red: #dc3545;
+//@orange: #fd7e14;
+//@yellow: #ffc107;
+//@green: #28a745;
+//@teal: #20c997;
+//@cyan: #17a2b8;
+//@white: #fff;
+//@gray: #6c757d;
+//@gray-dark: #343a40;
+//@primary: #007bff;
+//@secondary: #6c757d;
+//@success: #28a745;
+//@info: #17a2b8;
+//@warning: #ffc107;
+//@danger: #dc3545;
+//@light: #f8f9fa;
+//@dark: #343a40;
+
+//定义一个变量和一个mixin
+@baseFontSize: 16; //基于视觉稿横屏尺寸/100得出的基准font-size
+.px2rem(@name, @px) {
+    @{name}: @px / @baseFontSize * 1rem;
+}
+
+img {
+  max-width: 100% !important;
+}
+
+@font-12: 0.75rem;
+@font-14: 0.875rem;
+@font-15: 0.9375rem;
+@font-16: 1rem;
+@font-18: 1.125rem;
+@font-20: 1.25rem;
+@font-24: 1.5rem;
+
+.font-12 {
+  font-size: @font-12 !important;
+}
+
+.font-14 {
+  font-size: @font-14 !important;
+}
+
+.font-15 {
+  font-size: @font-15 !important;
+}
+
+.font-16 {
+  font-size: @font-16 !important;
+}
+
+.font-20 {
+  font-size: @font-20 !important;
+}
+
+.font-18 {
+  font-size: @font-18 !important;
+}
+
+.font-24 {
+  font-size: @font-24 !important;
+}
+
+//flex 布局和 子元素 对其方式
+.fj(@type: space-between) {
+  display: flex;
+  justify-content: @type;
+}
+
+//段落禁止换行，显示省略号
+.noWrap {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// transform上下左右居中
+.ctt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+// 懒加载呀图片
+.lazy-imgs[lazy=loading] {
+  background-image: url('../../static/img/lording.gif');
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+}
+// 背景图片
+.bg-image(@url) {
+  background-image: url('@{url}@1x.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  @media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2) {
+    background-image: url('@{url}@2x.png');
+  }
+  @media only screen and (-webkit-min-device-pixel-ratio: 3), only screen and (min-device-pixel-ratio: 3) {
+    background-image: url('@{url}@3x.png');
+  }
+}
+
+// 我的
+.my-icon {
+  display: inline-block;
+  .px2rem(width, 20);
+  .px2rem(height, 20);
+  vertical-align: middle;
+  .bg-image('../assets/avatar');
+}
+
+/**************************对MintUI rem修正****************************/
+.mint-indicator-wrapper{
+  z-index: 5000;
+}
+.mint-header {
+  background-color: #26a2ff;
+  color: #fff;
+  font-size: 1.1rem;
+  .px2rem(height, 40);
+  .px2rem(line-height, 40);
+  //padding: 0 10px;
+  .mint-header-title {
+    .px2rem(line-height, 40);
+  }
+  .mint-header-button {
+    .px2rem(height, 40);
+    .px2rem(line-height, 40);
+  }
+}
+.mint-navbar {
+  .px2rem(height, 90/2);
+
+  .mint-tab-item {
+    font-size: 1rem;
+  }
+
+  .mint-tab-item.is-selected {
+    border-bottom: 2px solid @blue;
+    color: @blue;
+    margin-bottom: -2px;
+  }
+  .mint-tab-item-label {
+    font-size: 1rem;
+  }
+}
+
+/**************************对MintUI rem修正--end****************************/
+
+/**************************公共样式****************************/
+.btn {
+  background-color: #e5e5e5;
+}
+.btn-yellow {
+  color: #fff;
+  background-color: @yellow;
+  border-color: @yellow;
+}
+.popup-pay {
+  width: 100%;
+}
+.popup-ask {
+  width: 100%;
+  .px2rem(height, 120);
+  .px2rem(line-height, 60);
+  font-size: @font-18;
+  text-align: center;
+  div {
+    border-top: 1px solid #e5e5e5;
+  }
+}
+.content {
+  position: absolute;
+  .px2rem(top, 40);
+  bottom: 0;
+  width: 100%;
+  overflow-x: hidden;
+  left: 0rem;
+  overflow: auto;
+  background-color: #eee;
+
+  .content-cell {
+    background-color: #fff;
+    min-height: 2rem;
+    .px2rem(margin-top, 5);
+    padding: 0.5rem;
+    .cell-title {
+      font-size: @font-18;
+      .px2rem(line-height, 40);
+      color: @yellow;
+      .px2rem(height, 40);
+      border-bottom: 1px solid #e5e5e5;
+      .px2rem(border-width, 0.5);
+    }
+    .cell-body {
+      font-size: @font-14;
+    }
+  }
+  // :first-child {
+  //  margin-top: -0.5rem;
+  //}
+}
+
+/**************************公共样式--end****************************/
+
+
+
+

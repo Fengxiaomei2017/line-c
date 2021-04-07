@@ -1,0 +1,250 @@
+import axios from 'axios'
+import store from '@/store/index'
+import router from '@/router/'
+
+var qs = require('qs')
+
+// axios 配置
+// axios.defaults.baseURL = 'http://www.daxi51.com'
+// axios.defaults.baseURL = 'http://pawtfs.natappfree.cc'
+axios.defaults.baseURL = 'http://120.55.49.68:8085/'
+
+axios.interceptors.request.use(
+  config => {
+    if (store.state.token) {
+      config.headers.Authorization = store.state.token
+    }
+    return config
+  },
+  err => {
+    return Promise.reject(err)
+  }
+)
+
+axios.interceptors.response.use(
+  response => {
+    return response
+  },
+  err => {
+    if (err.response) {
+      switch (err.response.status) {
+        case 401:
+          store.commit('LOGIN_OUT')
+          router.replace({
+            path: 'login',
+            query: {path: router.currentRoute.fullPath}
+          })
+      }
+    }
+  }
+)
+
+export const register = (phoneNum, password, validateCode) => axios.post('/user/register', qs.stringify({
+  phoneNum,
+  password,
+  validateCode
+}))
+/**
+ 用户登录
+ */
+
+/**
+ 用户动态登录
+ */
+export const loginByCode = (phoneNum, validateCode) => axios.get('/user/loginByCode', {
+  params: {
+    phoneNum,
+    validateCode
+  }
+})
+/**
+ 用户微信登录
+ */
+
+
+/**
+ * 退出登录
+ */
+export const loginOut = () => axios.post('')
+/**
+ * 获取验证码
+ * params:{phoneNum:用户电话}
+ */
+export const identifyCode = (phoneNumber) => axios.post('/user/sendRegisterCode', qs.stringify({phoneNumber}))
+/**
+ * 获取用户信息
+ * params:{token:用户token}
+ */
+export const getUserInfo = (token) => axios.post('/user/info', qs.stringify({token}))
+
+/**
+ * 获取修改密码验证码
+ * params:{phoneNum:用户电话}
+ */
+export const sendUpdatePasswordCode = (phoneNum) => axios.post('/user/sendUpdatePasswordCode', qs.stringify({phoneNum}))
+/**
+ *获取动态密码
+ */
+export const sendLoginCode = (phoneNum) => axios.get('/user/sendLoginCode', {params: {phoneNum}})
+
+
+
+//
+// 1.微信授权登陆 user/wxLogin(code)
+export const wxLogin = (code) => axios.post('/user/wxLogin', qs.stringify({code}))
+// 2.账号密码登录 user/login(phoneNum,password)
+export const login = (phoneNum, password) => axios.get('/user/login', {params: {phoneNum, password}})
+// export const phoneNumLogin = (phoneNum,password) => axios.post('/user/login', qs.stringify({code}))
+
+// 3 发送动态密码	user/sendLoginCode(phoneNumber)
+
+// 3 动态密码登录 	user/loginByCode(phoneNumber,validateCode)
+//
+//
+//
+// 4 注册验证码 user/sendRegisterCode(phoneNumber)
+// 4.账号密码注册 user/register(phoneNum,validateCode,password)
+//
+// 5. 发送短信修改验证码 user/sendUpdatePasswordCode(phoneNumber)
+// 5.短信修改密码 	user/updatePassword（phoneNum,verificationCode,password）
+
+
+/**
+ * 获取线路列表
+ * @param pageNum
+ * @param pageSize
+ * @param days
+ * @param orderBy
+ * @param orderDesc
+ * @returns {*|void}
+ */
+export const getRoadList = (pageNum, pageSize,days,type,theme,orderBy,orderDesc) => axios.post('/productBaseInfo/listProductInfo', qs.stringify({
+  pageNum, pageSize,days,type,theme,orderBy,orderDesc
+}))
+
+
+
+//pageNum, pageSize,days,type,theme,orderBy,orderDesc
+export const getRoadListAndParam = ( pageNum, pageSize,days,type,theme,orderBy,orderDesc) => {
+  return axios.all([getRoadList(pageNum, pageSize,days,type,theme,orderBy,orderDesc), axios.get('productBaseInfo/getProductListScreenParam')])
+}
+
+
+
+/**
+ * 获取商品详情
+ * @param productId
+ * @returns {AxiosPromise}
+ */
+export const getProductById = (productId) => axios.post('/productBaseInfo/getProductDetail', qs.stringify({
+  productId,
+}))
+/**
+ * 获取商品预订日历信息
+ * @param productId
+ * @returns {AxiosPromise}Date
+ */
+export const getProductDateById = (productId) => axios.post('/goodsSkuInfo/listSku', qs.stringify({
+  productId,
+}))
+
+/**
+ * 获取订单列表
+ * @param userId 用户
+ * @param orderState 0 为全部
+ * @param pageNumber
+ * @param pageSize
+ * @returns {AxiosPromise}/orderBaseInfo/fetchBuyerOrder?userId=1&orderState=0&pageNumber=1&pageSize=20
+ */
+export const getOrderList = (userId, orderState,pageNumber,pageSize) => axios.post('/orderBaseInfo/fetchBuyerOrder', qs.stringify({
+  userId,
+  orderState,
+  pageNumber,
+  pageSize,
+}))
+/**
+ * 新建订单
+ * http://xixing.s1.natapp.cc/orderBaseInfo/createOrder?stockGoodsId=927ad32bcd174bec96d8997c1f5500d7&adult=2&child=0&orderMoney=300&buyerId=1&contactPerson=cxy&contactPhone=13882149136
+ * post
+ */
+export const createOrder = (stockGoodsId, adult, child, orderMoney, buyerId, contactPerson, contactPhone) => axios.post('/orderBaseInfo/createOrder', qs.stringify({
+  stockGoodsId, adult, child, orderMoney, buyerId, contactPerson, contactPhone
+}))
+/**
+ * 支付订单
+ * @param orderNo
+ * @returns {AxiosPromise}
+ */
+export const payOrder = (orderNo) => axios.post('/orderBaseInfo/pay', qs.stringify({
+  orderNo
+}))
+
+export const getOrderDetail = (userId,orderNo) => axios.post('/orderBaseInfo/fetchBuyerOrderItem', qs.stringify({
+  userId,
+  orderNo
+}))
+
+export const cancelOrder = (userId,orderNo) => axios.post('/orderBaseInfo/buyerCancel', qs.stringify({
+  userId,
+  orderNo
+}))
+
+/**
+ * 获取用户评论
+ * params:{shopId:酒店ID}
+ */
+export const getComments = (shopId, pageSize = 10) => axios.post('/hotel-web/evaluate/searchEvaluate', qs.stringify({
+  shopId,
+  pageSize
+}))
+
+/**
+ * 根据订单ID判断订单是否支付完成
+ * post
+ */
+export const orderIfPay = (orderNum) => axios.post('/hotel-web/order/queryPayState', qs.stringify({orderNum}))
+/**
+ * 根据订单ID获取订单详情
+ * post
+ */
+export const cancelOrderByUser = (orderId) => axios.post('/hotel-web/order/buyerCancelNotPay', qs.stringify({orderId}))
+/**
+ * 微信支付接口 独立浏览器
+ */
+
+export const wxForward = (service, orderNum, orderMoney, orderName, orderId) => axios.post('/hotel-web/pay/wxForward', qs.stringify({
+  service,
+  orderNum,
+  orderMoney,
+  orderName,
+  orderId
+}))
+/**
+ * 微信支付接口 微信公众号
+ */
+export const wxJSAPIPay = (service, orderNum, orderId, orderName, orderMoney) => axios.post('/hotel-web/pay/wxJSAPIPay', qs.stringify({
+  service, orderNum, orderId, orderName, orderMoney
+}))
+/**
+ * 发表评论
+ */
+export const addComment = (createrId, orderId, healthScore, evnScore, serviceScore, facilityScore, shopId, goodsId, content, imgs) => axios.post('/hotel-web/evaluate/saveOrUpdateEva', qs.stringify({
+  createrId, orderId, healthScore, evnScore, serviceScore, facilityScore, shopId, goodsId, content, imgs
+}))
+/**
+ *图片删除
+ */
+export const deleteImg = (url) => axios.get('hotel-web/upload/del', {params: {url}})
+/**
+ * 用户修改密码
+ * */
+export const updatePassword = (phoneNum, verificationCode, password) => axios.post('/user/updatePassword', qs.stringify({
+  phoneNum,
+  verificationCode,
+  password
+}))
+
+/**
+ *获取退款说明
+ */
+export const getBack = (id, hotelId) => axios.post('hotel-web/hotelGoods/toView1', qs.stringify({id, hotelId}))

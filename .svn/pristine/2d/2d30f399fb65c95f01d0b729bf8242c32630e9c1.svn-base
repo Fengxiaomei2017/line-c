@@ -1,0 +1,77 @@
+<template>
+
+  <ul class="nav nav-justified nav-tab">
+    <li class="nav-item" v-for="item in tabList" @click="chooseTab(item.tabID,item.tabText)">
+      <a class="nav-link" :class="{
+        'dropdown-toggle': dropdown,
+        'active': selected==item.tabID
+         }"
+         href="javascript:void(0)">{{item.tabText}}</a>
+    </li>
+  </ul>
+
+</template>
+
+<script>
+
+  export default {
+    name: 'Tab',
+    props: {
+      tabList: {
+        type: Array
+      },
+      selected: {
+        type: String
+      },
+      dropdown:{
+        default:false
+      }
+    },
+    data(){
+      return{
+        selectedTab:this.selected
+      }
+    },
+    methods: {
+     chooseTab (id,tabText) {
+       // this.selectedTab=id;
+       this.$emit('selectedTab',id,tabText)
+     }
+   }
+  }
+
+
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+
+  @import "../style/main.less";
+  @border-w:0.16rem;
+  .nav-tab{
+    .px2rem(height,40);
+    .px2rem(top,40);
+    position: fixed;
+    background-color: @white;
+    z-index: 1;
+     width:100%;
+    .nav-link{
+      /*margin-bottom: -@border-w;*/
+      padding: 0.52rem 0;
+      font-size: @font-14;
+      border-bottom: @border-w solid @level;
+      color:@font-dark;
+      /*border-radius: 2px;*/
+    }
+    .active{
+      border-bottom: @border-w solid @blue;
+      color: @blue;
+    }
+  .dropdown-toggle::after {
+    margin-left: 0.5em;
+  }
+  }
+
+
+</style>
+
+

@@ -1,0 +1,126 @@
+<template>
+  <div>微信登陆，正在跳转，请稍后...</div>
+</template>
+<script>
+import {getParams, getStore} from '@/config/mUtils'
+import {wxLogin} from '@/api/getData'
+import {mapMutations} from 'vuex'
+
+export default {
+  created() {
+    this._wxLogin()
+  },
+  // mounted () {
+  //   this._wxLogin()
+  // },
+  methods: {
+    ...mapMutations([
+      'SET_USER',
+      'SET_TOKEN'
+    ]),
+    _wxLogin() {
+      let params = getParams(window.location.href)
+      // alert('location:'+window.location.href);
+      // alert('params:'+ JSON.stringify(params));
+      let nextPageIndex = window.location.href.indexOf('nextPage=')
+      let nextPageName = window.location.href.substring(nextPageIndex+9)
+      // alert('nextPageName:'+nextPageName);
+      //   let code = params.code || ''
+      //   let hotelIdItem = params.hotelId
+      //   let id = params.id
+      //   let goodsIdItem = params.goodsId
+      //   let minStockItem = params.minStock
+      //   if (code) {
+      //     wxLogin(code).then(res => {
+      //       var data = res.data.data
+      //       var lineUser = data.info
+      //       if (res.data.state === 1) {
+      //         if (lineUser) {
+      //           this.SET_USER(lineUser)
+      //           this._toPath(hotelIdItem, id, goodsIdItem, minStockItem)
+      //         } else {
+      //           alert('没有获取到用户信息!')
+      //         }
+      //         if (data.token) {
+      //           this.SET_TOKEN(data.token)
+      //         }
+      //       } else {
+      //         alert('错误' + data)
+      //       }
+      //     })
+      //   }
+      // },
+      if (this.$store.state.lineUser.id) {
+        // let hotelId = localStorage.getItem('html-hotelId')
+        // let intoDate, leaveDate
+        // if (params.intoDate) {
+        //   intoDate = this.formatTime(params.intoDate)
+        // }
+        // if (params.leaveDate) {
+        //   leaveDate = this.formatTime(params.leaveDate)
+        // }
+        // // alert('酒店ID：' + hotelId)
+        // // alert('开始时间：' + intoDate)
+        // // alert('结束时间：' + leaveDate)
+        // window.location.href = 'http://www.daxi51.com/hotel/#/hotelMainDetail?hotelId=' + hotelId + '&intoDate=' + intoDate + '&leaveDate=' + leaveDate
+        // // this.$router.push({path: '/hotelMainDetail', query: {hotelId, intoDate, leaveDate}})
+      } else {
+        let code = params.code || ''
+        // let hotelIdItem = params.hotelId
+        // let id = params.id
+        // let goodsIdItem = params.goodsId
+        // let minStockItem = params.minStock
+        if (code) {
+          // alert('code:'+JSON.stringify(code));
+          wxLogin(code).then(res => {
+            // alert(JSON.stringify(res));
+            var data = res.data.data
+            var lineUser = data.info
+            if (res.data.state === 1) {
+              if (lineUser) {
+                this.SET_USER(lineUser)
+                this._toPath(nextPageName)
+              } else {
+                // alert('没有获取到用户信息!')
+              }
+              if (data.token) {
+                this.SET_TOKEN(data.token)
+              }
+            } else {
+              // alert('错误' + data)
+            }
+          })
+        }
+      }
+    },
+    _toPath (nextPageName) {
+      // alert('nextPage:' + nextPageName)
+      if (nextPageName.indexOf('ChooseDate') > -1) {
+        let product = getStore('BOOK-PRODUCT')
+        if (product) {
+          product = JSON.parse(product)
+          this.$router.push({
+            name: 'ChooseDate', params: {
+              id: product.productId,
+            }
+          })
+        } else {
+          window.location.href = 'http://www.daxi51.com/#/'
+          // window.location.href = 'http://www.daxi51.com/lineC/#/'
+        }
+      } else {
+        this.$router.push({name:nextPageName})
+        // window.location.href = 'http://www.daxi51.com/lineC/#/'
+      }
+      // window.location.href = 'http://www.daxi51.com/hotel/#/submitOrder?hotelId=' + hotelIdItem + '&id=' + id + '&goodsId=' + goodsIdItem + '&minStock=' + minStockItem
+      // this.$router.push({path: '/submitOrder', query: {hotelId: hotelIdItem, id: id, goodsId: goodsIdItem, minStock: minStockItem}})
+    },
+    formatTime(time) {
+      time = time + ''
+      return time.slice(0, 4) + '-' + time.slice(4, 6) + '-' + time.slice(6)
+    }
+  }
+}
+</script>
+<style>
+</style>

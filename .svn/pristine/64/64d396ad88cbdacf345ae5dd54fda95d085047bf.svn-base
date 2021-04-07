@@ -1,0 +1,171 @@
+<template>
+  <ul :class="linkClass()">
+    <li class="nav-item" v-for="(item,index) in tabList">
+      <!-- <a :tab="item.tabID"
+         ref="ajs"
+         :class="[selected === item.tabID || myselected === item.tabID?'them':'',
+         selected === item.tabID || myselected === item.tabID?'days':'',
+         selected === item.tabID || myselected === item.tabID?'way':'',
+         selected === item.tabID || myselected === item.tabID?'sort':'']"
+         class=""
+         @click="goAnchor($event,'#'+item.anchorID,index)"
+         href="javascript:void(0)">{{item.tabText}}</a> -->
+      <a :tab="item.tabID"
+         ref="ajs"
+         class=""
+         @click="goAnchor($event,'#'+item.anchorID,index)"
+         href="javascript:void(0)">{{item.tabText}}</a>
+    </li>
+  </ul>
+</template>
+
+<script>
+export default {
+  name: 'tab-anchor',
+  props: {
+    tabOffset: {
+      type: Number
+    },
+    parentOffset: {
+      type: Number
+    },
+    tabList: {
+      type: Array
+    },
+    selected: {
+      type: Number
+    }
+  },
+  data() {
+    return {
+      activeClick: false,
+      myselected: '',
+      parentOffset2: 0,
+      tabFixed: false
+    }
+  },
+  // computed: {
+  //   selectIndex () {
+  //     return selected
+  //   }
+  // },
+  watch: {
+    selected () {
+      var ajs = this.$refs.ajs
+      this._clearBottom(ajs)
+      ajs[this.selected].className = 'myselected'
+    }
+  },
+  mounted () {
+    this.$nextTick(() => {
+      this.$refs.ajs[0].className = 'myselected'
+      // this.tabOffsetTop = document.querySelector('.nav-tab').offsetTop + 200
+      document.addEventListener('scroll', this.handleScroll)
+    })
+  },
+  destroyed () {
+    document.removeEventListener('scroll', this.handleScroll)
+  },
+  methods: {
+    goAnchor: function(event, selector, index) {
+      var ajs = this.$refs.ajs
+      this._clearBottom(ajs)
+      ajs[index].className = 'myselected'
+      var scrollT
+      if (selector === '#cell1') {
+        scrollT = document.querySelector(selector).offsetTop + this.parentOffset
+        this.parentOffset2 = this.parentOffset
+      } else {
+        if (this.parentOffset2 > 0) {
+          scrollT = document.querySelector(selector).offsetTop + this.parentOffset2 - 70
+          this.parentOffset2 = 0
+        } else {
+          scrollT = document.querySelector(selector).offsetTop + this.parentOffset - 30
+        }
+      }
+      window.scrollTo(0, scrollT)
+      // window.location.href= anchorID
+    },
+    linkClass () {
+      if (this.tabFixed) {
+        return ['nav' ,'nav-justified' ,'nav-tab','fixed-top']
+      } else {
+        return ['nav' ,'nav-justified' ,'nav-tab']
+      }
+    },
+    handleScroll () {
+      let scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+      // 判断滚动位置设置被选tab
+      // 设置置顶
+      if (this.tabOffset > 0) {
+        if (scrollTop < this.tabOffset) {
+          this.tabFixed = false
+        } else {
+          this.tabFixed = true
+        }
+      }
+    },
+    _clearBottom (ajs) {
+      for (var i = 0; i < ajs.length; i++) {
+        if (ajs[i].className === 'myselected') {
+          ajs[i].className = ''
+        }
+      }
+    }
+  }
+}
+</script>
+
+<style lang="less" type="text/less" rel="stylesheet/less" scoped>
+
+  @import "../style/main.less";
+
+  @border-w: 0.16rem;
+  .nav-tab {
+    .px2rem(height, 40);
+    .px2rem(top, 40);
+    /*position: absolute;*/
+    background-color: @white;
+    width: 100%;
+    a {
+      /*margin-bottom: -@border-w;*/
+      display: inline-block;
+      width: 100%;
+      padding: 0.5rem 0;
+      font-size: @font-15;
+      border-bottom: @border-w solid @level;
+      color: @font-dark;
+      /*border-radius: 2px;*/
+      &.myselected {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      /*&.active {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.them {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.days {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.way {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }
+      &.sort {
+        border-bottom: @border-w solid @blue;
+        color: @blue;
+      }*/
+    }
+    a:link {
+      text-decoration: none;
+    }
+    /*.dropdown-toggle::after {
+      margin-left: 0.5em;
+    }*/
+  }
+</style>

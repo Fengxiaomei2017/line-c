@@ -1,0 +1,533 @@
+<template>
+  <div>
+    <!--<mt-header fixed title="线路详情">-->
+      <!--<router-link to="/list" @click="goBack" slot="left">-->
+        <!--<mt-button icon="back"></mt-button>-->
+      <!--</router-link>-->
+      <!--<mt-button icon="more" slot="right"></mt-button>-->
+    <!--</mt-header>-->
+    <header class="mint-header is-fixed">
+      <div class="mint-header-button is-left">
+        <div    class="">
+          <button class="mint-button mint-button--default mint-button--normal" @click="goBack">
+            <span class="mint-button-icon"><i class="mintui mintui-back"></i></span>
+            <label class="mint-button-text"></label>
+          </button>
+        </div>
+      </div>
+      <h1 class="mint-header-title">线路详情</h1>
+      <div class="mint-header-button is-right">
+        <!--<a data-v-c1010688="" href="#/my-orders" class=""><i data-v-c1010688="" class="iconfont icon-dingdan"></i></a>-->
+      </div>
+    </header>
+    <div class="swipe">
+      <mt-swipe :auto="4000">
+        <mt-swipe-item v-for="img in this.product.imgList">
+          <img class="card-img-top" :src="img">
+        </mt-swipe-item>
+      </mt-swipe>
+    </div>
+    <div class="content-spe">
+      <div class="content-cell mt-0 cell-1">
+        <div class="upImg">
+          <p> {{product.productName}}</p>
+          <p>
+            <span class="tag" v-for="item in product.label">{{item}}</span>
+          </p>
+          <p>
+            <span class="text-danger"><b class="font-20">{{product.productScore}}</b><span class="font-12">分</span>  非常值得去</span>
+          </p>
+          <div class="price yellow"><span>￥</span>
+            <span class="price-num font-weight-bold">{{product.minSellPrice}}</span><span> 起</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-cell">
+        <div class="cell-title">线路亮点</div>
+        <div class="cell-body font-12">
+          <span class="display-4 font-gray">“</span>看色达盛景，观礼天葬，转绕坛城，听法闻法，拍摄雪景下的色达全景看色达盛景，观礼天葬，转绕坛城，听法闻法，拍摄雪景下的色达全景
+          <footer class="blockquote-footer text-right font-gray">成都ABCD俱乐部 推荐<span class="display-4 font-gray">”</span>
+          </footer>
+        </div>
+      </div>
+      <div class="content-cell">
+        <div class="cell-title">行程点评</div>
+
+        <div class="cell-body font-12">
+          姑娘好饭量
+
+          2018年 1月 17日出游
+
+          <p class="text-right">
+            <span class="text-danger"><b class="font-20">4.7</b><span class="font-12">分</span></span>
+          </p>
+          <p class="text-right">
+            <span class="text-danger">非常值得去</span>
+          </p>
+
+          看色达盛景，观礼天葬，转绕坛城，听法闻法，拍摄雪景下的色达全景
+        </div>
+      </div>
+      <div class="content-cell p-0">
+        <tab-anchor :tab-list="tablist" :selected="selected"></tab-anchor>
+      </div>
+      <div class="content-cell mt-0" id="cell1">
+        <img class="tese" :src="tese">
+      </div>
+      <div class="content-cell" id="cell2">
+        <div class="cell-title">行程介绍</div>
+        <div class="cell-body">
+          <div>
+            <label class=" "><span class="tag font-16">出发</span></label>
+            <label class="">{{product.startAddress}}</label>
+          </div>
+          <div>
+            <label class="  "><span class="tag font-16">行程</span></label>
+            <label class="">{{product.days}}天</label>
+          </div>
+          <div>
+            <label class=""><span class="tag font-16">途径</span></label>
+            <label class="">{{product.destination}}</label>
+          </div>
+          <div class="time-line-road">
+            <TimeLineRoad :item-list="product.singlePlan"></TimeLineRoad>
+          </div>
+        </div>
+      </div>
+      <div class="content-cell" id="cell3">
+        <div class="cell-title">费用说明</div>
+      </div>
+      <div class="content-cell" id="cell4">
+        <div class="cell-title">预订须知</div>
+      </div>
+      <div class="black-bottom"></div>
+    </div>
+<!--     <div class="fixed-middle">
+      <webMap></webMap>
+    </div> -->
+    <div class="fixed-bottom">
+      <div class="fixed-btn">
+        <i class="up-map"></i>
+        <i class="show-map"></i>
+        <i class="hide-map"></i>
+      </div>
+      <div class="map">
+        <webMap></webMap>
+      </div>
+      <div class="bottom">
+        <div class="bg-white total ask" @click="showPhoneNum(true)">咨询</div>
+        <div class="bg-white total" @click="showShare(true)">分享</div>
+        <div class="next-step" @click="book">预订</div>
+      </div>
+    </div>
+    <mt-popup
+      v-model="popupVisibleAsk"
+      position="bottom" class="popup-ask">
+      <div>
+        电话
+        <a href="tel:028-888888">028-888888</a>
+      </div>
+      <div @click="showPhoneNum(false)">
+        取消
+      </div>
+
+    </mt-popup>
+    <mt-popup
+      v-model="popupVisibleShare"
+      position="bottom" class="popup-ask share">
+      <div class="datasetconfig" data-title="分享标题"></div>
+
+    </mt-popup>
+  </div>
+</template>
+
+<script>
+import tese from '@/assets/tese.jpg'
+import {getProductById} from '@/api/getData.js'
+import {setStore} from '@/config/mUtils'
+import Tab from '@/components/tab-anchor'
+import TimeLine from '@/components/time-line-road'
+import avatar from '@/assets/timg.jpg'
+import Vue from 'vue'
+import {Popup} from 'mint-ui'
+import webMap from '@/components/webMap.vue'
+
+Vue.component(Popup.name, Popup)
+Vue.component(TimeLine.name, TimeLine)
+Vue.component(Tab.name, Tab)
+
+  export default {
+    name: 'List',
+    // mixins:[mixin],
+    components: {
+      webMap
+    },
+    mounted() {
+      window.addEventListener('scroll', this.handleScroll)
+      // soshm('.datasetconfig', {
+      //   sites: ['weixin,', 'weibo', 'yixin', 'qzone']
+      // })
+    },
+    destroyed() {
+      window.removeEventListener('scroll', this.handleScroll)
+    },
+    handleScroll() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+      console.log(scrollTop)
+    },
+    data() {
+      return {
+        // upMap: true,
+        // showMap: false,
+        // hideMap: true,
+        selected: 'theme',
+        popupVisibleAsk: false,
+        popupVisibleShare: false,
+        productId: false,
+        tablist: [{
+          tabID: 'theme',
+          tabText: '线路特色',
+          anchorID: 'cell1'
+        }, {
+          tabID: 'days',
+          tabText: '行程介绍',
+          anchorID: 'cell2'
+        }, {
+          tabID: 'way',
+          tabText: '费用说明',
+          anchorID: 'cell3'
+        }, {
+          tabID: 'sort',
+          tabText: '预订须知',
+          anchorID: 'cell4'
+        }
+        ],
+        five18Img: avatar,
+        tese: tese,
+        product: {
+          // "singlePlan": [
+          //   {
+          //     "destination": "武侯祠",
+          //     "brightSpot": "参观成都著名景点武侯祠",
+          //     "id": "g2455g29f7uj8f1d13d2ff8a4b7b015987",
+          //     "day": "1",
+          //     "mileage": 17
+          //   },
+          //   {
+          //     "destination": "锦里-友豪大酒店",
+          //     "brightSpot": "参观锦里,住4星酒店",
+          //     "id": "dj9t43902uf2f1d13d2ff8a4b7b015987",
+          //     "day": "2",
+          //     "mileage": 15
+          //   }
+          // ],
+          // "startAddress": "武侯祠",
+          // "attributeList": [
+          //   {
+          //     "name": "服务/咨询电话",
+          //     "content": "17311076974",
+          //     "attrId": "38e90929d41a43738aead9a795cedcc4"
+          //   },
+          //   {
+          //     "name": "主题",
+          //     "content": [
+          //       "自驾"
+          //     ],
+          //     "attrId": "61ec899abbb44e498b16bb4e88ceb2eb"
+          //   }
+          // ],
+          // "destination": "武侯祠-锦里-宽窄巷子",
+          // "days": 2,
+          // "evaluateList": [
+          //   {
+          //     "score": 4.8,
+          //     "headImg": "aaaa",
+          //     "nickname": "帅",
+          //     "userId": "kunkun",
+          //     "evaluateImages": "http://tupian.com",
+          //     "content": "哈哈哈,牛批",
+          //     "evaluateId": "84902584caae4c74b9f1bc87e5e2dd79",
+          //     "tripTime": "2018-03-14T03:36:02.000+0000",
+          //     "evaluateNum": 1
+          //   }
+          // ],
+          // "minSellPrice": 100,
+          // "label": [
+          //   "无自费",
+          //   "探险",
+          //   "狂野"
+          // ],
+          // "productScore": "4.8",
+          // "productName": "环游艾泽拉斯",
+          // "imgList": [
+          //   "awdawdaw"
+          // ]
+        },
+        itemlist: [
+          {
+            from: '成都',
+            to: '丹巴',
+            lightspot: '巴郎山、甲居藏寨  里程：338公里',
+            describe: "图片加文字",
+            dayNum: '1'
+          }, {
+            from: '成都',
+            to: '丹巴',
+            lightspot: '巴郎山、甲居藏寨  里程：338公里',
+            describe: "图片加文字",
+            dayNum: '2'
+          }, {
+            from: '成都',
+            to: '丹巴',
+            lightspot: '巴郎山、甲居藏寨  里程：338公里',
+            describe: "图片加文字",
+            dayNum: '3'
+          }
+        ]
+      }
+    },
+    methods: {
+      goBack () {
+        console.log('返回')
+      },
+      showPhoneNum(isShow) {
+        this.popupVisibleAsk = isShow
+      },
+      showShare(isShow) {
+        this.popupVisibleShare = isShow
+      },
+      book() {
+        setStore('BOOK-PRODUCT', {
+          productId: this.productId,
+          productName: this.product.productName,
+          img: this.product.imgList[0]
+        })
+        this.$router.push({
+          name: 'ChooseDate',
+          params: {
+            id: this.productId,
+          }
+        });
+      }
+    },
+    created() {
+      if (this.$route.params.id) {
+        this.productId = this.$route.params.id
+        getProductById(this.$route.params.id).then(res => {
+          if (res && res.data.state === 1) {
+            // this.roadList = res.data.data.list;
+            this.product = res.data.data
+          }
+        })
+      }
+    }
+  }
+</script>
+
+<style lang="less" type="text/less" scoped>
+  @import "../style/main.less";
+  /*@import "../style/mixin.less";*/
+
+  .tese {
+    width: 100%;
+  }
+
+  .black-bottom {
+    .px2rem(height, 60);
+  }
+
+  .swipe {
+    /*position: absolute;*/
+    /*top: 2.5rem;*/
+    .px2rem(height, 220);
+    width: 100%;
+    /*left: 0rem;*/
+    overflow: hidden;
+  }
+
+  .content-spe {
+    position: absolute;
+    /*top: 2.5rem;*/
+    /*bottom: 0;*/
+    /*width: 100%;*/
+    /*left: 0rem;*/
+
+    background-color: #eee;
+    .px2rem(top, 200);
+    .px2rem(border-top-right-radius, 15);
+    .px2rem(border-top-left-radius, 15);
+
+    .cell-1 {
+      .px2rem(border-top-right-radius, 15);
+      .px2rem(border-top-left-radius, 15);
+
+      .price {
+        margin-top: -2.5rem;
+        text-align: right;
+        .price-num {
+          .px2rem(font-size, 25);
+        }
+      }
+    }
+
+    .tag {
+      border: 1px solid @yellow;
+      color: @yellow;
+      /*padding: 0.1rem;*/
+      border-radius: 3px;
+      font-size: @font-12;
+      display: inline-block;
+      .px2rem(margin-right, 10);
+      .px2rem(padding-right, 4);
+      .px2rem(padding-left, 4);
+    }
+
+    .time-line-road {
+      border-top: 1px solid #eee;
+      .px2rem(border-top-width, 5);
+      .px2rem(margin-right, -16);
+      .px2rem(margin-left, -16);
+    }
+
+    .content-cell {
+      background-color: #fff;
+      min-height: 2rem;
+      .px2rem(margin-top, 5);
+      padding: 0.5rem;
+      .cell-title {
+        font-size: @font-18;
+        text-align: center;
+      }
+      .cell-body {
+        padding: 0 0.5rem;
+      }
+
+      p {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+      }
+
+    }
+
+    /*:nth-child(2) {*/
+    /*margin-top: -0.5rem;*/
+
+    /*.upImg {*/
+    /*!*border-radius: 5px 5px 0 0;*!*/
+    /*!*z-index: 1;*!*/
+    /*!*position: absolute;*!*/
+    /*}*/
+
+    /*}*/
+
+  }
+
+  .filter {
+    min-height: 130px;
+  }
+
+  .card {
+    padding: 0.5rem;
+    border: 0;
+    background: #eee;
+    border-radius: 0;
+    color: #fff;
+
+    h4 {
+      position: absolute;
+      left: 8px;
+      background: #e85811;
+      padding: 5px;
+    }
+
+    .black-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      position: absolute;
+      top: 65%;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      padding: 0.5rem;
+    }
+
+    .startingPoint {
+      position: absolute;
+      bottom: 0.5rem;
+    }
+
+  }
+
+/*  .fixed-middle {
+    position: absolute;
+  }*/
+  .fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    .fixed-btn {
+      i {
+        display: block;
+        position: absolute;
+        .px2rem(width, 60);
+        .px2rem(height, 60);
+        &.up-map {
+          .px2rem(top, -65);
+          .px2rem(right, 30);
+          .bg-image('../../static/img/up');
+        }
+        &.show-map {
+          display: none;
+          /*.px2rem(top, 10);
+          .px2rem(right, 30);
+          .bg-image('../../static/img/show');
+          z-index: 1000;*/
+        }
+        &.hide-map {
+          .px2rem(top, 20);
+          .px2rem(right, 30);
+          .bg-image('../../static/img/hide');
+          z-index: 1000;
+        }
+      }
+    }
+    .map {
+      width: 100vw;
+      .px2rem(height, 120);
+    }
+    .bottom {
+      display: flex;
+      text-align: center;
+      .total {
+        width: 20%;
+        /*flex: 0 0 20%;*/
+        display: inline-block;
+        .px2rem(height, 60);
+        .px2rem(line-height, 60);
+      }
+      .ask {
+        border-right: 1px solid #e5e5e5;
+        /*margin-right: -1px;*/
+      }
+      .next-step {
+        width: 60%;
+        display: inline-block;
+        background: @orange;
+        color: white;
+        .px2rem(height, 60);
+        .px2rem(line-height, 60);
+      }
+    }
+  }
+
+  .popup-ask {
+    width: 100%;
+    .px2rem(height, 120);
+    .px2rem(line-height, 60);
+    font-size: @font-18;
+    text-align: center;
+    div {
+      border-top: 1px solid #e5e5e5;
+    }
+  }
+</style>
